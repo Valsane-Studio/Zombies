@@ -16,7 +16,7 @@ export function createNavigation(blockers,platforms,bounds={minX:-94,maxX:94,min
     for(const p of platforms){const h=deckHeight(p,x,z);if(h!==null)return .06+Math.max(0,h)}
     return .06;
   }
-  function obstruction(x,z,pad=0,limit=Infinity){
+  function obstruction(x,z,pad=0,limit=0){
     for(const b of blockers)if(b.h>=limit&&Math.abs(x-b.x)<b.w/2+pad&&Math.abs(z-b.z)<b.d/2+pad)return true;
     return false;
   }
