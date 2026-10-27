@@ -1,113 +1,77 @@
 <!doctype html>
-<html lang="fr">
-<head>
- <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
- <meta name="theme-color" content="#111b1d">
- <meta name="description" content="ZONE ZÉRO — Le Carrefour. Un jeu de stratégie de survie au tour par tour, par Valsane Studio.">
- <title>ZONE ZÉRO — Le Carrefour · Valsane Studio</title>
- <link rel="stylesheet" href="./style.css">
-</head>
-<body>
- <main id="viewport" aria-label="Diorama tactique 3D du Carrefour"></main>
- <div class="screen-vignette" aria-hidden="true"></div>
- <header class="masthead panel">
-  <div class="brand">
-   <span class="overline"><span class="live"></span> VALSANE STUDIO <span class="slash">/</span> EXPÉRIENCE 01</span>
-   <h1>ZONE <em>ZÉRO</em></h1>
-   <p>LE CARREFOUR <span class="slash">·</span> SURVIE TACTIQUE</p>
-  </div>
-  <div class="header-stats">
-   <div><small>TOUR</small><strong id="turnValue">00</strong></div>
-   <div><small>SANTÉ</small><strong class="heart" id="hpValue">♥♥♥</strong></div>
-   <div><small>DISTANCE B</small><strong id="distanceValue">27 cases</strong></div>
-  </div>
- </header>
- <aside class="mission-panel panel">
-  <span class="overline">MISSION <span class="slash">/</span> SECTEUR 01</span>
-  <h2>TRAVERSER<br>LE CARREFOUR</h2>
-  <p class="story">Les rues sont désertes, mais pas silencieuses. Atteignez la sortie <strong>B</strong>. Il n'est pas nécessaire d'éliminer les infectés.</p>
-  <div class="mini-divider"></div>
-  <div class="legend-row"><span class="legend-dot green"></span><span>Vert : sortie du secteur</span></div>
-  <div class="legend-row"><span class="legend-dot amber"></span><span>Ambre : bruit et investigation</span></div>
-  <div class="legend-row"><span class="legend-dot rust"></span><span>Rouge : infecté alerté</span></div>
-  <div class="mini-divider"></div>
-  <div class="subhead">CHAQUE ACTION = UN TOUR</div>
-  <p class="smaller">Choisissez votre déplacement et vérifiez son rayon sonore avant de cliquer. Les zombies agissent <strong>après</strong> vous.</p>
-  <div class="key-row"><kbd>GLISSER</kbd> Déplacer la caméra</div>
-  <div class="key-row"><kbd>MOLETTE</kbd> Zoom</div>
-  <div class="key-row"><kbd>C</kbd> Recentrer une fois</div>
- </aside>
- <aside class="intel-panel panel">
-  <div class="section-line"><span class="overline">RECONNAISSANCE</span><span class="eyebrow" id="seenValue">0 visibles</span></div>
-  <div id="threats" class="threat-list"><div class="threat-empty">Observation en cours…</div></div>
-  <div class="section-line second"><span class="overline">DERNIER BRUIT</span><span id="lastNoise" class="noise-label">SILENCE</span></div>
-  <div class="mini-divider"></div>
-  <div class="section-line"><span class="overline">INFECTÉS</span><span id="intelValue" class="eyebrow">0 en alerte</span></div>
-  <div class="section-line"><span class="overline">SORTIE</span><span class="eyebrow">POINT B</span></div>
-  <div class="mission-progress"><i id="missionProgress"></i></div>
-  <div class="muted-note">Les positions des zombies hors de vue ne sont pas révélées.</div>
- </aside>
- <div class="focus-caption panel">
-  <span class="overline">ANTICIPATION DE L'ACTION</span>
-  <div class="forecast"><span id="previewText">Survolez une case pour prévoir le déplacement.</span><div class="decibels"><span>BRUIT</span><strong id="noiseAmount">—</strong></div></div>
-  <p>Le cercle ambré représente les infectés susceptibles d'entendre l'action, même hors de votre champ de vision.</p>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172422"><meta name="description" content="ZONE ZÉRO — La Pharmacie : un jeu de plateau tactique où vous manipulez les hordes par le bruit.">
+<title>ZONE ZÉRO — La Pharmacie · Valsane Studio</title>
+<link rel="stylesheet" href="./pharmacy.css"></head><body>
+<div class="app">
+<header class="masthead">
+ <div class="mast-left"><span class="eyebrow"><span class="status-dot"></span> VALSANE STUDIO <span class="slash">/</span> JEU DE STRATÉGIE</span><h1>ZONE <em>ZÉRO</em><span class="edition">01 · LA PHARMACIE</span></h1></div>
+ <div class="mast-right"><div><small>TOUR</small><b id="turn">00</b></div><div><small>SANTÉ</small><b id="health">♥ ♥ ♥</b></div><div><small>MÉDICAMENTS</small><b id="objectiveState">À RÉCUPÉRER</b></div><button id="restartTop" title="Recommencer la mission"><span class="restart-symbol">↻</span> RECOMMENCER</button></div>
+</header>
+<div class="layout">
+<aside class="mission side-panel">
+ <span class="eyebrow">DOSSIER 01 <span class="slash">/</span> OPÉRATION</span>
+ <h2>La Pharmacie</h2>
+ <p class="lede">Récupérez une boîte de médicaments dans la pharmacie, puis revenez à votre point d'extraction.</p>
+ <div class="section-rule"></div>
+ <div class="objective-steps">
+  <div id="task1" class="task current"><span class="task-num">01</span><span>Entrer dans la pharmacie<small>Choisissez la porte et le moment.</small></span><i>○</i></div>
+  <div id="task2" class="task"><span class="task-num">02</span><span>Récupérer les médicaments<small>Une action sur place.</small></span><i>○</i></div>
+  <div id="task3" class="task"><span class="task-num">03</span><span>Rejoindre l'extraction<small>Il faut aussi réussir le retour.</small></span><i>○</i></div>
  </div>
- <div class="bottom-left panel">
-   <div class="section-line"><span class="overline">INVENTAIRE <span class="slash">/</span> SURVIVANT</span><span id="weaponValue" class="weapon-name">PISTOLET 9 MM</span></div>
-   <div class="inventory-grid">
-    <div><small>CHARGEUR / RÉSERVE</small><strong id="ammoValue">4 / 4</strong></div>
-    <div><small>BOUTEILLES</small><strong id="bottleValue">2</strong></div>
-    <div><small>PANSEMENTS</small><strong id="medkitValue">1</strong></div>
-   </div>
-   <div class="stamina-row"><span>EFFORT DE COURSE</span><strong id="staminaValue">4 / 4</strong><div class="stamina-track"><i id="staminaFill"></i></div></div>
-   <div id="lootHint" class="loot-hint">FOUILLE POSSIBLE SUR UNE CASE MARQUÉE</div>
+ <div class="section-rule"></div>
+ <span class="eyebrow">TROIS OPTIONS À ENVISAGER</span>
+ <div class="clue"><span class="clue-icon">A</span><div><b>L’alarme</b><small>Déclenchez-la depuis le boîtier. Elle attire les zombies vers le véhicule pendant cinq tours.</small></div></div>
+ <div class="clue"><span class="clue-icon">B</span><div><b>Les passages</b><small>L'entrée et la grille arrière offrent des parcours différents. Ouvrir une porte modifie aussi les chemins des zombies.</small></div></div>
+ <div class="clue"><span class="clue-icon">C</span><div><b>La diversion</b><small>Lancez une bouteille à un autre endroit et traversez pendant que les infectés s'y dirigent.</small></div></div>
+ <div class="section-rule"></div>
+ <div class="legend"><span><i class="legend-player"></i> SURVIVANT</span><span><i class="legend-zombie"></i> INFECTÉ</span><span><i class="legend-noise"></i> BRUIT</span><span><i class="legend-goal"></i> OBJECTIF</span></div>
+</aside>
+<section class="board-column">
+ <div class="board-frame"><div class="board-topline"><span class="eyebrow">PLAN TACTIQUE <span class="slash">/</span> SECTEUR 01</span><div class="board-modes"><span><i class="live"></i> SIMULATION AU TOUR PAR TOUR</span><button id="helpToggle" title="Voir les règles">? RÈGLES</button></div></div>
+ <div class="board-wrapper"><canvas id="board" width="1200" height="800" aria-label="Plateau tactique de la pharmacie"></canvas></div>
+ <div class="board-footer"><span>CLIQUEZ UNE CASE POUR PRÉPARER UNE ACTION</span><span><i class="minidot"></i> LES FLÈCHES EN POINTILLÉS ANTICIPENT LES ZOMBIES</span></div>
  </div>
- <section class="commands panel" aria-label="Actions tactiques">
-  <div class="section-line"><span class="overline">PLANIFIER LE PROCHAIN TOUR</span><button class="tiny" id="buttonCenter">◎ CENTRER</button></div>
-  <div class="command-section">
-   <div class="micro-title">DÉPLACEMENT <span>1–3</span></div>
-   <div class="button-row">
-    <button id="mode-sneak" class="mode-btn"><span>1</span> SE FAUFILER <small>2 CASES · BRUIT 1</small></button>
-    <button id="mode-walk" class="mode-btn active"><span>2</span> MARCHER <small>3 CASES · BRUIT 3</small></button>
-    <button id="mode-sprint" class="mode-btn"><span>3</span> COURIR <small>5 DROITES · BRUIT 8</small></button>
-   </div>
-  </div>
-  <div class="command-section">
-   <div class="micro-title">ACTION SUR LA CARTE</div>
-   <div class="button-row">
-    <button id="tool-move" class="action-btn active"><span>A</span> DÉPLACER</button>
-    <button id="tool-bottle" class="action-btn"><span>B</span> LANCER UNE BOUTEILLE</button>
-    <button id="tool-shoot" class="action-btn"><span>F</span> VISER & TIRER</button>
-   </div>
-  </div>
-  <div class="command-section compact">
-   <div class="micro-title">ÉQUIPEMENT</div>
-   <div class="button-row">
-    <button id="buttonPistol" class="small-btn active">Q · PISTOLET</button>
-    <button id="buttonShotgun" class="small-btn" disabled>D · FUSIL À POMPE</button>
-    <button id="buttonReload" class="small-btn">R · RECHARGER</button>
-   </div>
-  </div>
-  <div class="command-section compact">
-   <div class="micro-title">GESTES</div>
-   <div class="button-row">
-    <button id="buttonLoot" class="small-btn" disabled>E · FOUILLER</button>
-    <button id="buttonHeal" class="small-btn">H · SOIGNER</button>
-    <button id="buttonWait" class="small-btn wait">ESPACE · ATTENDRE</button>
-   </div>
-  </div>
-  <div class="command-footer">
-    <button id="buttonRestart">↻ RECOMMENCER</button>
-    <button id="buttonSound">SON ACTIVÉ</button>
-  </div>
- </section>
- <div id="feedback" class="feedback panel" role="status" aria-live="polite">Les rues du Carrefour vous attendent.</div>
- <div id="endOverlay" class="overlay" hidden>
-  <div class="end-card panel"><span class="overline">VALSANE STUDIO <span class="slash">/</span> RAPPORT DE TRAVERSÉE</span>
-   <h2 id="endTitle">EXTRACTION</h2><p id="endDetail"></p>
-   <button id="endRestart">REJOUER LE CARREFOUR</button>
-  </div>
+ <div class="preview-panel">
+  <div class="preview-info"><span class="eyebrow">CONSÉQUENCE PRÉVUE</span><strong id="previewTitle">Choisissez une action sur le plateau</strong><p id="previewDetails">Survolez une case pour afficher le trajet, le bruit et les déplacements des infectés avant de confirmer.</p></div>
+  <div class="prediction-numbers"><div><small>BRUIT</small><b id="previewNoise">—</b></div><div><small>MENACES ALERTÉES</small><b id="previewAlert">—</b></div><div><small>RISQUE IMMÉDIAT</small><b id="previewRisk">—</b></div></div>
  </div>
- <script type="module" src="./tactics.js"></script>
-</body>
-</html>
+ <div class="log-line"><span class="eyebrow">JOURNAL</span><span id="log">La pharmacie contient les médicaments. Rapportez-les au point d'extraction.</span></div>
+</section>
+<aside class="control side-panel">
+ <div class="section-heading"><span class="eyebrow">COMMANDES <span class="slash">/</span> SURVIVANT</span><span class="turn-indicator">1 ACTION = 1 TOUR</span></div>
+ <div class="stats-tiles">
+  <div><small>BALLES</small><strong id="ammo">3 <span>/ 2</span></strong></div>
+  <div><small>BOUTEILLES</small><strong id="bottles">2</strong></div>
+  <div><small>SOINS</small><strong id="medkits">1</strong></div>
+  <div><small>ENDURANCE</small><strong id="stamina">4 / 4</strong></div>
+ </div>
+ <div class="section-rule"></div>
+ <div class="command-group"><div class="group-title"><span>ALLURE</span><small>RAPIDITÉ CONTRE DISCRÉTION</small></div>
+  <div class="mode-buttons"><button data-mode="sneak" class="selected"><b>SE FAUFILER</b><span>2 CASES · SILENCIEUX</span></button><button data-mode="walk"><b>MARCHER</b><span>3 CASES · BRUIT 2</span></button><button data-mode="sprint"><b>COURIR</b><span>5 CASES · BRUIT 6</span></button></div>
+ </div>
+ <div class="command-group"><div class="group-title"><span>ACTION SUR LE PLATEAU</span></div>
+  <div class="tool-buttons"><button id="toolMove" data-tool="move" class="selected"><span class="tool-symbol">↗</span>DÉPLACER</button><button data-tool="bottle" id="toolBottle"><span class="tool-symbol">◈</span>BOUTEILLE</button><button data-tool="shoot" id="toolShoot"><span class="tool-symbol">⊕</span>TIRER</button></div>
+  <p class="hint">Pour ouvrir une porte, activer l'alarme ou récupérer les médicaments, cliquez directement sur son symbole.</p>
+ </div>
+ <div class="section-rule"></div>
+ <div class="command-group"><div class="group-title"><span>ACTIONS À PROXIMITÉ</span></div>
+  <div id="nearby" class="nearby"><p class="empty-action">Approchez-vous d'une porte ou d'un mécanisme pour agir.</p></div>
+ </div>
+ <div class="command-group extras"><button id="wait">◷ ATTENDRE</button><button id="reload">↻ RECHARGER</button><button id="heal">✚ SOIGNER</button></div>
+ <div class="confirmation"><div id="pendingLabel">Aucune action préparée</div><button id="confirm" disabled>CONFIRMER L'ACTION <span>↵</span></button><button id="cancel" disabled>ANNULER</button></div>
+ <div class="control-footer"><button id="sound">♫ SON : ON</button><span>ESPACE · ATTENDRE / ENTRÉE · CONFIRMER</span></div>
+</aside>
+</div>
+</div>
+<div class="modal-overlay" id="help" hidden><div class="modal">
+ <button id="closeHelp" class="close-modal" aria-label="Fermer">×</button><span class="eyebrow">COMMENT JOUER</span><h2>Observer. Prévoir. Agir.</h2>
+ <p>Le plateau montre tous les zombies et les chemins. Chaque action consomme un tour, puis les zombies avancent. Avant toute décision, vous pouvez voir leur <strong>déplacement prévu en pointillés</strong> et le <strong>rayon sonore</strong> qui les attirera.</p>
+ <p><strong>Déplacer :</strong> choisissez l'allure puis cliquez une destination. <strong>Interagir :</strong> cliquez une porte, le boîtier de l'alarme ou les médicaments quand vous êtes tout près. <strong>Bouteille :</strong> choisissez le bouton puis une case à six cases maximum. <strong>Tirer :</strong> ciblez un zombie visible.</p>
+ <p>Une alarme attire pendant cinq tours. Les zombies ne sont pas intelligents : ils vont vers ce qu'ils voient ou entendent. Les barrières et les portes changent leurs itinéraires. Vous pouvez gagner sans tirer.</p>
+ <button id="closeHelpBottom" class="modal-cta">COMPRIS · JOUER</button>
+ </div></div>
+<div class="modal-overlay" id="end" hidden><div class="modal end-modal"><span class="eyebrow">RAPPORT DE MISSION</span><h2 id="endTitle"></h2><p id="endText"></p><button id="retry" class="modal-cta">REJOUER LA PHARMACIE</button></div></div>
+<script type="module" src="./pharmacy.js"></script>
+</body></html>
