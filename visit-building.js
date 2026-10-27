@@ -166,9 +166,9 @@ export function createVisitBuilding(T,scene){
  hotspot('stairsUp','Monter au premier étage',-24.1,.1,-35.1,0,-23.7,-35.2);
  hotspot('window','Passer par la fenêtre arrière',-9.75,0,-37,0,-9.5,-35.1);
  hotspot('aptDoor','Ouvrir l’appartement',-17.45,Y1,-29.65,1,-17.5,-31.1);
- hotspot('roofUp','Accéder au toit',-24.1,Y1,-35.1,1,-23.7,-35.25);
- hotspot('stairsDown','Redescendre au hall',-24.1,Y1,-31.0,1,-23.7,-30.85);
- hotspot('roofDown','Redescendre du toit',-24.1,Y2,-31.15,2,-23.7,-31.15);
+ hotspot('roofUp','Accéder au toit',-22.0,Y1,-35.1,1,-22.0,-35.25);
+ hotspot('stairsDown','Redescendre au hall',-22.05,Y1,-31.15,1,-22.05,-31.15);
+ hotspot('roofDown','Redescendre du toit',-22.05,Y2,-31.15,2,-22.05,-31.15);
  hotspot('note','Observer les lieux',-11.85,Y1,-27.6,1,-12.8,-27.45,'#a7c7af');
  let level=0,entranceOpen=false,apartmentOpen=false,transition=null,currentInside=false;
  const now={x:-17,z:-30};
@@ -182,6 +182,8 @@ export function createVisitBuilding(T,scene){
   if(lev===2)return !inside(x,z);
   if(lev===1){
    if(!inside(x,z))return true;
+   // Ne pas marcher dans l'ouverture du plancher : seuls les escaliers permettent d'y passer.
+   if(collisionRect(x,z,r,-24.2,-33.55,3.0,5.5))return true;
    // Cloison de l'appartement, passage central uniquement si la porte est ouverte.
    if(collisionRect(x,z,r,-22.75,partitionZ,8.5,.30))return true;
    if(collisionRect(x,z,r,-11.7,partitionZ,9.4,.30))return true;
@@ -241,10 +243,10 @@ export function createVisitBuilding(T,scene){
    const fromInside=inside(player.position.x,player.position.z);
    return animateTransition(player,[-9.75,.12,fromInside?-39.0:-35.4],0,1.05);
   }
-  if(id==='stairsUp'&&level===0)return animateTransition(player,[-24.1,Y1+.03,-31.0],1,1.65);
+  if(id==='stairsUp'&&level===0)return animateTransition(player,[-22.05,Y1+.03,-31.15],1,1.65);
   if(id==='stairsDown'&&level===1)return animateTransition(player,[-24.1,.12,-35.25],0,1.65);
-  if(id==='roofUp'&&level===1)return animateTransition(player,[-24.1,Y2+.04,-31.0],2,1.65);
-  if(id==='roofDown'&&level===2)return animateTransition(player,[-24.1,Y1+.03,-35.25],1,1.65);
+  if(id==='roofUp'&&level===1)return animateTransition(player,[-22.05,Y2+.04,-31.15],2,1.65);
+  if(id==='roofDown'&&level===2)return animateTransition(player,[-22.05,Y1+.03,-35.25],1,1.65);
   if(id==='aptDoor'&&level===1){
    apartmentOpen=true;aptHinge.rotation.y=-1.5;
    return 'La porte de l’appartement s’ouvre sur une pièce abandonnée.';
