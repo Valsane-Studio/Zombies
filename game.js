@@ -347,13 +347,17 @@ function drawMiniMap(){
   g.moveTo(tx(cameraCenter.x),tz(cameraCenter.z)-5);g.lineTo(tx(cameraCenter.x),tz(cameraCenter.z)+5);g.stroke();
 }
 // Caméra orbitale tactique : glisser pour tourner ; Maj/secondaire pour déplacer ; molette zoom.
-let azimuth=-.74,zoom=1,cameraCenter=new T.Vector3(0,0,0);
+let azimuth=-.74,zoom=.86,cameraCenter=new T.Vector3(start.x,0,start.z);
 function cameraUpdate(){
   const distance=44,angle=1.02;
   camera.position.set(cameraCenter.x+distance*Math.sin(azimuth)*Math.cos(angle),
     cameraCenter.y+distance*Math.sin(angle),
     cameraCenter.z+distance*Math.cos(azimuth)*Math.cos(angle));
   camera.lookAt(cameraCenter);
+  // Ombres cohérentes pendant la traversée des quartiers.
+  sun.position.set(cameraCenter.x-18,31,cameraCenter.z+16);
+  sun.target.position.set(cameraCenter.x,0,cameraCenter.z);
+  sun.target.updateMatrixWorld();
 }
 function resize(){
   const width=innerWidth,height=innerHeight,scale=(width<700?20:17.6)*zoom;
@@ -372,6 +376,7 @@ canvas.addEventListener('pointermove',e=>{
   if(!down)return;
   const dx=e.clientX-down.x,dy=e.clientY-down.y;
   if(down.pan){
+    followSelected=false;
     const magnitude=.038*zoom;
     const horizontal=new T.Vector3(Math.cos(azimuth),0,-Math.sin(azimuth));
     const vertical=new T.Vector3(-Math.sin(azimuth),0,-Math.cos(azimuth));
@@ -396,11 +401,19 @@ canvas.addEventListener('pointerup',e=>{
   if(world.obstruction(target.x,target.z,.35)){note('OBSTACLE : CHOISISSEZ UNE ZONE LIBRE',2);return}
   const p=squad[selected];if(!p?.alive)return;
   const path=world.pathfind(p,target);
-  if(path.length){p.path=path;p.path.push({x:target.x,z:target.z});p.destination=target;p.buff=null;renderSquad(true)}
+  if(path.length){p.path=path;p.destination=target;p.buff=null;renderSquad(true)}
   else note('POSITION INACCESSIBLE : ESSAYEZ UN AUTRE POINT',2);
 });
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.63,Math.min(1.7,zoom*(e.deltaY>0?1.075:.93)));resize()},{passive:false});
 function togglePause(force){paused=typeof force==='boolean'?force:!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'}
+$('locate').onclick=()=>{followSelected=true;note('CAMÉRA RECENTRÉE SUR '+names[selected],1.8)};
+$('minimap').addEventListener('click',e=>{
+  const r=$('minimap').getBoundingClientRect();
+  const u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height;
+  const bounds=world.bounds;
+  cameraCenter.set(bounds.minX+u*(bounds.maxX-bounds.minX),0,bounds.minZ+v*(bounds.maxZ-bounds.minZ));
+  followSelected=false;cameraUpdate();
+});
 $('pause').onclick=()=>togglePause();$('speed').onclick=()=>{rate=rate===1?2:1;$('speed').textContent=rate+'×'};
 $('sound').onclick=()=>{
   sound.unlock();const muted=sound.setMuted(!sound.muted);
@@ -413,14 +426,19 @@ window.addEventListener('keydown',e=>{
   if(['1','2','3','4'].includes(e.key))select(Number(e.key)-1);
   if(e.code==='Space'){e.preventDefault();togglePause()}
   if(e.key==='Escape'&&paused)togglePause(false);
+  if(e.key.toLowerCase()==='c')followSelected=true;
 });
-renderSquad(true);note('DÉPLACEZ VOTRE ESCOUADE — LES CERCLES JAUNES AUGMENTENT LA PRÉCISION',4.3);
-let previous=performance.now();
+renderSquad(true);missionHud();note('MISSION : TRAVERSEZ LA VILLE JUSQU’AU POINT B. REPÉREZ LES COUVERTS JAUNES.',5.5);
+let previous=performance.now(),lastMiniTime=-999;
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(.045,(now-previous)/1000);previous=now;
   if(!paused&&!ended)tick(dt*rate);
-  for(const s of world.spots)if(s.ring){s.ring.material.opacity=.68+.26*Math.sin(now*.0025+s.x)}
+  if(followSelected&&squad[selected]?.alive){
+    const p=squad[selected];cameraCenter.lerp(new T.Vector3(p.x,0,p.z),Math.min(1,dt*2.8));
+  }
+  cameraUpdate();world.updateVisuals(now/1000);
+  if(now-lastMiniTime>170){drawMiniMap();lastMiniTime=now}
   renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
