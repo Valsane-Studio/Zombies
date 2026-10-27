@@ -1,7 +1,8 @@
 /* ZONE ZÉRO · Une seule rue à explorer en temps réel.
    Vue perspective en plongée, personnage 3D animé, pistolet, aucun ennemi. */
 import * as T from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {createCivilian} from './civilian.js';
+import {createClickNavigation} from './click-navigation.js';
 import {buildStreet} from './street-world.js';
 
 const $=id=>document.getElementById(id);
@@ -37,94 +38,9 @@ const playerRoot=new T.Group();
 playerRoot.position.set(-12,.12,0);
 scene.add(playerRoot);
 const player={root:playerRoot,velocity:new T.Vector3(),aim:new T.Vector3(0,0,-1),ammo:12,reloading:0,shootCD:0,moving:false,running:false,step:0,shots:0};
-let mixer=null,animationSet={},currentAnimation='',animatedModel=null,oldFallback=null;
-const mat=(color,roughness=.8,metalness=.04)=>new T.MeshStandardMaterial({color,roughness,metalness});
-const coat=mat('#606e63'),pants=mat('#414c4a'),skin=mat('#b2a18c'),
-  strap=mat('#443f38'),rubber=mat('#252c2c'),metal=mat('#3b494b',.38,.7);
-function mesh(geometry,material,parent,x,y,z){
- const object=new T.Mesh(geometry,material);
- object.castShadow=true;object.receiveShadow=true;
- object.position.set(x,y,z);parent.add(object);return object;
-}
-function block(parent,x,y,z,w,h,d,m){
- return mesh(new T.BoxGeometry(w,h,d),m,parent,x,y,z);
-}
-function fallbackSurvivor(){
- const g=new T.Group();playerRoot.add(g);
- const legs=[],arms=[];
- block(g,0,1.24,0,.62,.87,.40,coat);
- block(g,0,.87,.09,.49,.26,.36,pants);
- block(g,0,1.27,.29,.52,.72,.28,strap);
- block(g,0,1.65,.12,.70,.17,.42,coat);
- const hood=mesh(new T.SphereGeometry(.25,12,10),coat,g,0,1.94,-.01);
- mesh(new T.SphereGeometry(.19,12,10),skin,g,0,1.92,-.11);
- block(g,0,2.07,-.11,.37,.08,.30,coat);
- for(const sign of [-1,1]){
-   const lg=new T.Group();lg.position.set(sign*.18,.84,0);g.add(lg);
-   block(lg,0,-.33,.01,.21,.64,.24,pants);
-   block(lg,0,-.68,-.08,.23,.14,.37,rubber);
-   legs.push(lg);
-   const arm=new T.Group();arm.position.set(sign*.39,1.55,-.03);g.add(arm);
-   block(arm,0,-.30,-.05,.19,.60,.23,coat);
-   block(arm,0,-.63,-.08,.18,.16,.20,skin);
-   arms.push(arm);
- }
- block(g,0,1.33,.37,.32,.52,.11,mat('#596d57'));
- block(g,-.18,1.13,.50,.12,.30,.18,rubber);
- return{group:g,legs,arms};
-}
-oldFallback=fallbackSurvivor();
-// Pistolet distinct, orienté avec le survivant : 3D et détente animée.
-const pistolRig=new T.Group();
-pistolRig.position.set(.31,1.22,-.55);playerRoot.add(pistolRig);
-block(pistolRig,0,.10,-.12,.18,.16,.43,metal);
-block(pistolRig,0,.19,-.12,.20,.10,.48,rubber);
-block(pistolRig,0,-.08,-.05,.14,.25,.17,metal);
-block(pistolRig,0,.24,-.26,.055,.07,.13,metal);
-const muzzlePosition=new T.Vector3();
-function loadCharacter(){
- const loader=new GLTFLoader();
- // Modèle de démonstration animé officiel Three.js (repli procédural si indisponible).
- loader.load('https://threejs.org/examples/models/gltf/Soldier.glb', gltf=>{
-   if(!gltf?.scene)return;
-   animatedModel=gltf.scene;
-   // Le modèle est réajusté à la taille du personnage et ses pieds au sol.
-   const bbox=new T.Box3().setFromObject(animatedModel);
-   const sz=new T.Vector3();bbox.getSize(sz);
-   const h=sz.y||1.8,scale=1.99/h;
-   animatedModel.scale.setScalar(scale);
-   animatedModel.updateMatrixWorld(true);
-   const bounds=new T.Box3().setFromObject(animatedModel);
-   animatedModel.position.y-=bounds.min.y;
-   animatedModel.rotation.y=Math.PI;
-   animatedModel.traverse(obj=>{
-     if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true}
-     if(obj.isMesh&&/(gun|rifle|weapon)/i.test(obj.name))obj.visible=false;
-   });
-   playerRoot.add(animatedModel);
-   oldFallback.group.visible=false;
-   mixer=new T.AnimationMixer(animatedModel);
-   animationSet={};
-   for(const clip of gltf.animations){
-     const lower=clip.name.toLowerCase();
-     if(lower.includes('idle'))animationSet.idle=mixer.clipAction(clip);
-     if(lower.includes('walk'))animationSet.walk=mixer.clipAction(clip);
-     if(lower.includes('run'))animationSet.run=mixer.clipAction(clip);
-   }
-   setAnimation('idle',true);
-   $('loadingText').textContent='Rue prête. Explorez librement.';
- },undefined,()=>{
-   $('loadingText').textContent='Personnage procédural chargé. Explorez librement.';
- });
-}
-function setAnimation(name,immediate=false){
- if(!mixer||currentAnimation===name||!animationSet[name])return;
- const prior=animationSet[currentAnimation],next=animationSet[name];
- next.enabled=true;next.setEffectiveTimeScale(1);next.setEffectiveWeight(1);next.play();
- if(prior&&prior!==next){prior.crossFadeTo(next,.22,!immediate)}
- currentAnimation=name;
-}
-loadCharacter();
+// Personnage civil, de taille inférieure aux voitures et toujours armé.
+const character=createCivilian(T,playerRoot);
+const pistolRig=character.pistol;
 
 // Cible du curseur et caméra en plongée oblique, perspective réelle.
 const raycaster=new T.Raycaster();
@@ -229,9 +145,7 @@ function shoot(){
  gunSound();
  // Balle envoyée dans la direction réellement indiquée par le pointeur.
  const axis=player.aim.clone().normalize();
- const barrel=new T.Vector3(playerRoot.position.x+.31,1.42,playerRoot.position.z-.49);
- // Déterminer la sortie du canon en coordonnées locales de la rotation actuelle.
- playerRoot.localToWorld(barrel.set(.31,1.42,-1.04));
+ const barrel=character.muzzle();
  const end=barrel.clone().add(axis.clone().multiplyScalar(19));
  end.y=Math.max(.05,barrel.y-.09*19);
  // Mur proche : raccourcir visuellement si la ligne arrive en façade.
@@ -255,7 +169,7 @@ function shoot(){
    decal.rotation.x=-Math.PI/2;decal.position.set(toEnd.x,.06,toEnd.z);
    scene.add(decal);effects.push({mesh:decal,life:9,max:9});
  }
- pistolRig.position.z-=.045;
+ character.recoil();
  updateAmmo();
 }
 function updateAmmo(){
