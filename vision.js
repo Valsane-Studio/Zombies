@@ -11,7 +11,7 @@ export function createVision(T,scene,world){
   texture.minFilter=T.LinearFilter;texture.magFilter=T.LinearFilter;
   const material=new T.MeshBasicMaterial({map:texture,transparent:true,depthTest:false,depthWrite:false,side:T.DoubleSide,toneMapped:false});
   const overlay=new T.Mesh(new T.PlaneGeometry(w,h),material);
-  overlay.rotation.x=-Math.PI/2;overlay.position.set((minX+maxX)/2,40,(minZ+maxZ)/2);
+  overlay.rotation.x=-Math.PI/2;overlay.position.set((minX+maxX)/2,27,(minZ+maxZ)/2);
   overlay.renderOrder=300;overlay.frustumCulled=false;scene.add(overlay);
   const xPixel=x=>(x-minX)/w*width,zPixel=z=>(z-minZ)/h*height;
   const pixel=(x,z)=>{
