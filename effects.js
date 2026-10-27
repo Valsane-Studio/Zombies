@@ -16,17 +16,17 @@ export function createEffects(T,scene,world){
   const hazeTexture=gradientTexture('rgba(185,189,180,.24)');
   const sparkGeo=new T.SphereGeometry(.095,5,4);
   // Poussière flottante, visible surtout dans les zones éclairées.
-  const dustCount=155,dustPositions=new Float32Array(dustCount*3);
+  const dustCount=260,dustPositions=new Float32Array(dustCount*3);
   for(let i=0;i<dustCount;i++){
-    dustPositions[i*3]=-22+Math.random()*44;
+    dustPositions[i*3]=-89+Math.random()*178;
     dustPositions[i*3+1]=.3+Math.random()*6;
-    dustPositions[i*3+2]=-16+Math.random()*32;
+    dustPositions[i*3+2]=-62+Math.random()*124;
   }
   const dustGeo=new T.BufferGeometry();dustGeo.setAttribute('position',new T.BufferAttribute(dustPositions,3));
   const dustMesh=new T.Points(dustGeo,new T.PointsMaterial({color:0xd9c4a6,size:.065,transparent:true,opacity:.28,depthWrite:false,sizeAttenuation:true}));
   dustMesh.frustumCulled=false;scene.add(dustMesh);
   // Un voile atmosphérique dynamique localisé, sans obstruer la lecture du terrain.
-  const smokeSites=[[-5.5,-11.1],[14.2,-9.2],[7.1,10.3],[-17.6,12.7]];
+  const smokeSites=[[-38.2,7.5],[42,44],[23,-15],[-59,-48],[60,-48],[-12,22],[6,-30],[45,8],[-53,-11],[78,35]];
   for(let i=0;i<32;i++){
     const base=smokeSites[i%smokeSites.length];
     const material=new T.SpriteMaterial({map:hazeTexture,color:i%3===0?0xd0bfa6:0xabb5ac,transparent:true,opacity:.07,depthWrite:false,fog:true});
@@ -103,7 +103,7 @@ export function createEffects(T,scene,world){
       let y=pos.getY(i)+dt*.14;
       if(y>6.8)y=.14;
       let x=pos.getX(i)+dt*.052;
-      if(x>22)x=-22;
+      if(x>89)x=-89;
       pos.setXY(i,x,y);
     }
     pos.needsUpdate=true;
