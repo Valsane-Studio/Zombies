@@ -90,20 +90,20 @@ export function createVisitBuilding(T,scene){
  wall(upper,-12.3,Y1+1.55,Z1-.14,9.2,3.1,.28,m.plaster);
  // Cloison séparation appartement / palier, avec ouverture au centre.
  const partitionZ=-29.65;
- wall(upper,-23.8,Y1+1.55,partitionZ,6.0,3.1,.16,m.plaster);
- wall(upper,-10.25,Y1+1.55,partitionZ,6.1,3.1,.16,m.plaster);
+ wall(upper,-22.75,Y1+1.55,partitionZ,8.5,3.1,.16,m.plaster);
+ wall(upper,-11.7,Y1+1.55,partitionZ,9.4,3.1,.16,m.plaster);
  // Deux morceaux de cloison de part et d'autre de la porte, jamais un mur invisible à traverser.
  const aptHinge=new T.Group();aptHinge.position.set(-18.5,Y1,partitionZ);upper.add(aptHinge);
  box(aptHinge,.93,1.45,0,1.86,2.85,.10,m.wood);
  box(aptHinge,1.64,1.32,-.11,.075,.075,.16,m.metal);
  // Appartement : bibliothèque, matelas, table, radiateur, bureau poussiéreux.
- box(upper,-12.0,Y1+.56,-34.65,3.4,1.07,.65,m.wood);
- for(let i=0;i<15;i++)box(upper,-13.40+i*.2,Y1+1.22,-34.50,.12,.9,.36,i%3?m.paper:m.fabric);
- box(upper,-16,Y1+.29,-34.0,3.2,.43,1.55,m.fabric);
- box(upper,-16,Y1+.54,-34.8,3.4,.25,.35,m.paper);
- box(upper,-11.9,Y1+.73,-31.95,2.05,.12,1.1,m.wood2);
- for(const dx of [-.8,.8])for(const dz of [-.34,.34])box(upper,-11.9+dx,Y1+.36,-31.95+dz,.12,.62,.13,m.wood);
- box(upper,-8.2,Y1+1.2,-32.9,.35,1.4,1.9,m.edge);
+ box(upper,-11.4,Y1+.56,-25.2,3.4,1.07,.65,m.wood);
+ for(let i=0;i<15;i++)box(upper,-12.80+i*.2,Y1+1.22,-25.07,.12,.9,.36,i%3?m.paper:m.fabric);
+ box(upper,-16,Y1+.29,-26.35,3.2,.43,1.55,m.fabric);
+ box(upper,-16,Y1+.54,-27.14,3.4,.25,.35,m.paper);
+ box(upper,-11.8,Y1+.73,-27.6,2.05,.12,1.1,m.wood2);
+ for(const dx of [-.8,.8])for(const dz of [-.34,.34])box(upper,-11.8+dx,Y1+.36,-27.6+dz,.12,.62,.13,m.wood);
+ box(upper,-8.2,Y1+1.2,-26.1,.35,1.4,1.9,m.edge);
  // Fenêtres avec vues depuis l'étage, plutôt que murs pleins opaques.
  for(const x of [-23,-13]){
   box(upper,x,Y1+1.62,Z1-.33,2.2,1.65,.10,m.dark);
@@ -143,11 +143,11 @@ export function createVisitBuilding(T,scene){
  hotspot('blocked','Porte condamnée',-24.3,0,-23,0,-24.3,-21.4,'#ad746b');
  hotspot('stairsUp','Monter au premier étage',-24.1,.1,-33.4,0,-22.7,-32.15);
  hotspot('window','Passer par la fenêtre arrière',-9.75,0,-37,0,-9.5,-35.1);
- hotspot('aptDoor','Ouvrir l’appartement',-17.45,Y1,-29.65,1,-17.5,-28.2);
+ hotspot('aptDoor','Ouvrir l’appartement',-17.45,Y1,-29.65,1,-17.5,-31.1);
  hotspot('roofUp','Accéder au toit',-24.1,Y1,-33.0,1,-23.5,-33.0);
- hotspot('stairsDown','Redescendre au hall',-22.6,Y1,-26.4,1,-22.6,-27.0);
+ hotspot('stairsDown','Redescendre au hall',-22.6,Y1,-33.4,1,-22.6,-32.3);
  hotspot('roofDown','Redescendre du toit',-24.1,Y2,-32.0,2,-23.5,-32.0);
- hotspot('note','Observer les lieux',-11.85,Y1,-31.9,1,-12.7,-32.0,'#a7c7af');
+ hotspot('note','Observer les lieux',-11.85,Y1,-27.6,1,-12.8,-27.45,'#a7c7af');
  let level=0,entranceOpen=false,apartmentOpen=false,transition=null,currentInside=false;
  const now={x:-17,z:-30};
  const inside=(x,z)=>x>X0+.15&&x<X1-.15&&z>Z0+.15&&z<Z1-.15;
@@ -161,12 +161,12 @@ export function createVisitBuilding(T,scene){
   if(lev===1){
    if(!inside(x,z))return true;
    // Cloison de l'appartement, passage central uniquement si la porte est ouverte.
-   if(collisionRect(x,z,r,-23.75,partitionZ,6.15,.30))return true;
-   if(collisionRect(x,z,r,-10.25,partitionZ,6.15,.30))return true;
+   if(collisionRect(x,z,r,-22.75,partitionZ,8.5,.30))return true;
+   if(collisionRect(x,z,r,-11.7,partitionZ,9.4,.30))return true;
    if(!apartmentOpen&&collisionRect(x,z,r,-17.48,partitionZ,2.1,.3))return true;
    // Bibliothèque et lit restent des obstacles matériels.
-   if(collisionRect(x,z,r,-12,-34.65,3.2,.9))return true;
-   if(collisionRect(x,z,r,-16,-34,3,1.45))return true;
+   if(collisionRect(x,z,r,-11.4,-25.2,3.4,.9))return true;
+   if(collisionRect(x,z,r,-16,-26.35,3.2,1.5))return true;
    return false;
   }
   // Niveau rue : façades bloquées à l'exception des passages réellement ouverts.
