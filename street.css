@@ -1,0 +1,46 @@
+:root{color-scheme:dark;--fg:#f0f1e9;--muted:#a8bcb5;--gold:#d6b992;--edge:#84998c44}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#1c292a;color:var(--fg);font:12px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;overscroll-behavior:none}
+#scene,#scene canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}#scene canvas{cursor:crosshair}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,transparent 40%,#07151571 100%);box-shadow:inset 0 0 190px #0915176b}
+.topline{position:fixed;left:26px;top:23px;right:26px;display:flex;align-items:start;justify-content:space-between;gap:20px;pointer-events:none}
+.brand,.mode-label,.weapon-box,.instructions{background:linear-gradient(130deg,#172624df,#111d1cdb);border:1px solid var(--edge);border-radius:3px;box-shadow:0 9px 30px #0511116c;backdrop-filter:blur(13px)}
+.brand{padding:15px 19px 13px;min-width:228px}
+.micro{font-size:9px;color:#bbccc2;font-weight:820;letter-spacing:1.7px}
+.led,.mode-led{display:inline-block;border-radius:50%;width:6px;height:6px;margin-right:5px;background:#aed2aa;box-shadow:0 0 10px #a3d4a7}
+.slash{color:#698d7a}
+.brand h1{font-size:27px;letter-spacing:1.7px;line-height:1.03;font-weight:840;margin:11px 0 6px}
+.brand h1 span{color:#b2c4b6}.brand p{font-size:9px;color:#b6c6ba;letter-spacing:2px;font-weight:760;margin:0}
+.mode-label{padding:15px 18px;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.mode-label strong{font-size:10px;letter-spacing:1.5px;font-weight:820}
+.mode-label span:last-child{font-size:9px;color:#a9bbaf;letter-spacing:1px;font-weight:700}
+.mode-label .mode-led{position:absolute;right:164px;top:18px}
+#crosshair{position:fixed;left:50%;top:50%;width:16px;height:16px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .2s}
+#crosshair i{position:absolute;left:5px;top:5px;width:6px;height:6px;border-radius:50%;border:1px solid #fff3da;box-shadow:0 0 6px #000}
+.bottomline{position:fixed;left:26px;right:26px;bottom:22px;display:flex;align-items:end;justify-content:space-between;gap:20px;pointer-events:none}
+.instructions{padding:14px 17px;min-width:318px}
+.instructions p{margin:5px 0 0;color:#bbcec2;font-size:10px;font-weight:500;letter-spacing:.15px}
+.instructions p b{color:#e8e5d7;font-size:10px;font-weight:780}.instructions p em{font-style:normal;color:#668779;margin:0 6px}
+.weapon-box{padding:15px 18px;width:264px}
+.gunrow{display:flex;gap:15px;align-items:center;margin-top:11px}
+.gunrow svg{height:43px;width:83px;color:#c5c6af;opacity:.8}
+.gunrow strong{font-size:11px;letter-spacing:1.2px;font-weight:840}
+.bullets{font-size:9px;letter-spacing:1.5px;color:#ccba93;margin-top:6px;white-space:nowrap}
+.gunfoot{display:flex;align-items:end;justify-content:space-between;border-top:1px solid #6b817044;margin-top:11px;padding-top:8px}
+.gunfoot #ammo{font-size:23px;letter-spacing:1px;font-weight:780;font-variant-numeric:tabular-nums}
+.gunfoot #ammo small{font-size:12px;color:#889e90}
+.gunfoot #state{font-size:9px;color:#b9cfb2;letter-spacing:1.3px;font-weight:820;padding-bottom:4px}
+.loading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:14px;padding:13px 18px;background:#102421e8;border:1px solid #8da49577;border-radius:3px;font-size:10px;color:#e9e5d4;letter-spacing:1px;font-weight:750;z-index:9;box-shadow:0 13px 40px #04110ec9}
+.loading[hidden]{display:none}.spinner{height:18px;width:18px;border:2px solid #889b8a;border-top-color:#fff2d2;border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notice{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#172923ef;border:1px solid #9cad7c7d;color:#e5e2c7;padding:10px 16px;border-radius:3px;font-size:10px;letter-spacing:1px;z-index:8;font-weight:800}
+.notice[hidden]{display:none}
+.mobileControls{display:none}
+.ui-hidden .topline,.ui-hidden .bottomline,.ui-hidden .notice{display:none}
+@media(max-width:850px){.topline{left:11px;top:11px;right:11px}.bottomline{left:11px;right:11px;bottom:11px}.brand{padding:10px 12px;min-width:0}.brand h1{font-size:21px}.brand .micro{font-size:7px}.mode-label{display:none}.instructions{display:none}.weapon-box{width:219px;padding:10px 12px}.weapon-box .micro{font-size:7px}}
+@media(pointer:coarse){.mobileControls{display:flex;position:fixed;left:20px;right:20px;bottom:18px;align-items:end;justify-content:space-between;pointer-events:none}
+ .mobileControls .movePad{width:100px;height:100px;border:2px solid #c4ccac77;background:#20393278;border-radius:50%;position:relative;pointer-events:auto;touch-action:none;backdrop-filter:blur(8px)}
+ .mobileControls .movePad #stick{position:absolute;left:50%;top:50%;width:42px;height:42px;border:1px solid #d9dccb;background:#829d8da8;border-radius:50%;transform:translate(-50%,-50%)}
+ .mobileControls button{pointer-events:auto;border:1px solid #e1c8a7;background:#83664acc;padding:18px 21px;border-radius:50%;font-size:11px;font-weight:850;letter-spacing:1px;color:#f8e5cc;touch-action:none}
+ .weapon-box{display:none}.bottomline{display:none}
+}
