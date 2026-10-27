@@ -93,7 +93,7 @@ function hear(s,at,radius,name){
  }
 }
 function zombiesTurn(s){
- const p=s.player,occupiedNext=new Set();
+ const p=s.player,occupiedNext=new Set();let attacked=false;
  for(const z of s.zombies){
   if(z.hp<=0)continue;
   const sees=lineOfSight(s,z,p)&&dist(z,p)<=MODES[s.mode].view;
@@ -101,7 +101,7 @@ function zombiesTurn(s){
   else if(z.alert>0){z.alert--;if(z.phase==="poursuit")z.phase="cherche"}
   else{z.target=null;z.phase="errant"}
   // Chaque infecté est lent : une seule case de déplacement par tour.
-  if(near(z,p)){p.hp--;s.events.push("Un infecté vous blesse : −1 santé.");occupiedNext.add(K(z.x,z.y));continue}
+  if(near(z,p)){if(!attacked){p.hp--;attacked=true;s.events.push("Un infecté vous blesse : −1 santé.");}occupiedNext.add(K(z.x,z.y));continue}
   let target=z.target;
   if(!target&&s.turn%2===0){
    z.patrolIndex=(z.patrolIndex+1)%z.patrol.length;
@@ -133,7 +133,7 @@ function endTurn(s,actionNoise){
 }
 export function plannedPath(s,to){
  if(!to||!passable(s,to.x,to.y))return null;
- const full=route(s,s.player,to);
+ const full=route(s,s.player,to,-1,false);
  if(full.length<2)return null;
  let count=Math.min(MODES[s.mode].steps,full.length-1);
  if(s.mode==="sprint"){
@@ -175,7 +175,7 @@ export function apply(s,action){
   }
   if(at.x===PANEL.x&&at.y===PANEL.y){
    if(s.alarm.used){s.events=["Alarme déjà déclenchée."];return false}
-   s.alarm.used=true;s.alarm.active=5;s.events.push("L'alarme du véhicule retentit pendant cinq tours.");
+   s.alarm.used=true;s.alarm.active=8;s.events.push("L'alarme du véhicule retentit pendant huit tours.");
    endTurn(s);return true;
   }
   if(at.x===MED.x&&at.y===MED.y){
