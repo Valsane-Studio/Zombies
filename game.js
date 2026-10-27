@@ -457,6 +457,7 @@ function cameraUpdate(){
  camera.lookAt(cameraCenter);
  sun.position.set(cameraCenter.x-18,31,cameraCenter.z+16);
  sun.target.position.set(cameraCenter.x,0,cameraCenter.z);sun.target.updateMatrixWorld();
+ vision.align(camera,cameraCenter);
 }
 function resize(){
  const w=innerWidth,h=innerHeight,k=(w<700?20:17.6)*zoom;
