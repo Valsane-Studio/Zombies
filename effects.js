@@ -1,6 +1,7 @@
 /* ZONE ZÉRO — impacts, poussière, corps temporaires et atmosphère */
 export function createEffects(T,scene,world){
   const bodies=[],bursts=[],flashes=[],smoke=[];
+  const reactions=new Map();
   const scratchColor='#692e2b';
   const scarGeo=new T.SphereGeometry(.12,6,5);
   const scarMat=new T.MeshStandardMaterial({color:scratchColor,roughness:1});
@@ -73,9 +74,10 @@ export function createEffects(T,scene,world){
       zombie.actor.group.add(scar);
       zombie.scars++;
     }
-    zombie.hitTime=.11;
+    reactions.set(zombie,{time:.16,max:.16});
   }
   function kill(zombie){
+    reactions.delete(zombie);
     const actor=zombie.actor,group=actor.group;
     actor.selection.visible=false;
     // Cloner les matériaux uniquement pour ces cadavres, sans rendre transparentes les autres unités.
@@ -89,6 +91,13 @@ export function createEffects(T,scene,world){
     bodies.push({group,zombie,age:0,lifetime:7.6,fade:1.8,side:Math.random()>.5?1:-1,positionY:world.heightAt(zombie.x,zombie.z)});
   }
   function update(dt){
+    // Bref mouvement du buste à chaque projectile reçu.
+    for(const [z,r] of reactions){
+      r.time-=dt;const strength=Math.max(0,r.time/r.max);
+      z.actor.torso.rotation.x=-.3*strength;
+      z.actor.head.rotation.z=.16*strength;
+      if(r.time<=0){z.actor.torso.rotation.x=0;z.actor.head.rotation.z=0;reactions.delete(z)}
+    }
     const pos=dustGeo.attributes.position;
     for(let i=0;i<dustCount;i++){
       let y=pos.getY(i)+dt*.14;
