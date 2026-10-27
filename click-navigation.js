@@ -151,7 +151,7 @@ export function createClickNavigation(T,{world,scene,player,camera,canvas,onFire
     moving=changed;if(!changed)clear();
    }
   }
-  if(shootHeld){faceAt(shotAim,true);onFire(shotAim,true)}
+  if(shootHeld){faceAt(shotAim,true);onFire(shotAim)}
   if(marker.visible)marker.material.opacity=.62+.20*Math.sin(time*4.5);
   return{moving,running,shooting:shootHeld};
  }
