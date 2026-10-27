@@ -190,7 +190,8 @@ export function preview(s,dest){
  if(!passable(dest.x,dest.z))return{valid:false,reason:'Obstacle : passage impossible.'};
  if(s.zombies.some(z=>z.alive&&z.x===dest.x&&z.z===dest.z))return{valid:false,reason:'Un infecté bloque cette case.'};
  if(s.mode==='sprint'&&p.stamina<2)return{valid:false,reason:'Trop fatigué pour courir. Marchez ou attendez.'};
- const route=pathfind(p,dest,s.explored);
+ const knownOccupied=new Set(s.zombies.filter(z=>z.alive&&s.visible.has(key(z.x,z.z))).map(z=>key(z.x,z.z)));
+ const route=pathfind(p,dest,s.explored,knownOccupied);
  if(route.length<2)return{valid:false,reason:'Déjà sur place ou passage bloqué.'};
  let steps=Math.min(STYLES[s.mode].steps,route.length-1);
  if(s.mode==='sprint'&&route.length>2){
@@ -224,9 +225,20 @@ export function act(s,action){
   const choice=preview(s,action.target);
   if(!choice.valid){s.events.push({type:'invalid',text:choice.reason});return false}
   if(action.type==='move'){
-   p.x=choice.end.x;p.z=choice.end.z;
+   // Une silhouette encore masquée peut barrer le passage : on s'arrête avant
+   // elle, sans révéler sa position pendant la prévisualisation du trajet.
+   let actual=choice.end,interrupted=false;
+   for(const node of choice.route.slice(1)){
+     if(s.zombies.some(z=>z.alive&&z.x===node.x&&z.z===node.z)){interrupted=true;break}
+     actual=node;
+   }
+   if(actual.x===p.x&&actual.z===p.z){
+     s.events.push({type:'move',text:'Une présence bloque le passage devant vous.'});
+   }else{
+     p.x=actual.x;p.z=actual.z;
+     s.events.push({type:'move',text:interrupted?'Déplacement interrompu par un infecté.':choice.text});
+   }
    p.stamina=Math.max(0,Math.min(p.maxStamina,p.stamina+(s.mode==='sprint'?-2:1)));
-   s.events.push({type:'move',text:choice.text});
    resolveTurn(s,{point:{x:p.x,z:p.z},radius:choice.radius,label:s.mode},action);
   }else if(action.type==='bottle'){
    p.bottles--;s.events.push({type:'bottle',text:'Une bouteille se brise. La horde entend le bruit.'});
