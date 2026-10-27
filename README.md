@@ -1,50 +1,51 @@
-# ZONE ZÉRO — Rue abandonnée
+# ZONE ZÉRO — Le Café Nord (étude d’exploration 03)
 
-## Étude de rendu 02 · Un survivant, une rue et son pistolet
+Une étude **d’exploration 3D à la souris**, sans zombies, sans farming ni collecte obligatoire, dans une rue abandonnée envahie par la végétation.
 
-Cette version reprend le prototype d'exploration réaliste à petite échelle. **Il n'y a aucun zombie, aucun farming, aucune mission, aucune collecte** : le but est de juger les proportions, le rendu végétal et la sensation de déplacement.
+**Jouer :** https://valsane-studio.github.io/Zombies/
 
-**Site** : https://valsane-studio.github.io/Zombies/
+## Nouveau bâtiment explorable : le Café Nord
 
-### Commandes
+L'ancien « Café Nord », sur le côté nord de la rue, n’est plus un volume fermé décoratif. Il a été remplacé par un bâtiment réellement constitué de pièces et de niveaux.
 
-- **Clic gauche sur le sol** : rejoindre le point choisi. Le trajet contourne automatiquement les voitures, bennes et bâtiments.
-- **Double-clic ou Maj + clic gauche** : rejoindre la destination en courant.
-- **Clic droit (maintenu)** : orienter le pistolet vers le pointeur et tirer. Le personnage conserve toujours son pistolet à la main, même pendant la marche.
-- **R** : recharger le pistolet de démonstration.
-- **Échap** : annuler le déplacement.
-- **Flèches gauche / droite** : faire pivoter la caméra.
-- **Flèches haut / bas** : modifier la plongée.
-- **Molette** : zoom.
-- **H** : masquer ou réafficher l'interface.
-- **C** : recentrer la caméra.
-- **Écran tactile** : toucher le sol pour se déplacer, bouton Tirer.
+- **Hall au rez-de-chaussée** : entrée ouvrable au clic, carrelage, comptoir, mobilier abandonné, cage d’escalier.
+- **Porte condamnée** : une seconde porte de rue, barrée de planches et définitivement inaccessible. Une interaction explique pourquoi.
+- **Escalier** : les marches sont visibles, avec montée et descente animées. Le personnage peut atteindre un vrai premier étage.
+- **Premier étage** : palier, porte à ouvrir, appartement avec lit, table, bibliothèque et objets anciens.
+- **Toit** : second accès par la cage d’escalier. La vue de dessus permet d’observer les alentours et de redescendre.
+- **Fenêtre arrière** : un passage alternatif, atteignable depuis le hall ou par la cour arrière, avec animation simplifiée pour franchir le rebord.
+- **Gestion des occultations** : le toit et l’étage supérieur s’effacent quand le personnage explore le hall ; sur le palier, le toit s’efface ; il réapparaît lorsqu’on se trouve sur la terrasse.
+- **Étiquettes cliquables** : entrée, portes, escaliers, fenêtre, observations. Une interaction éloignée fait marcher le personnage jusqu’au point adapté avant de s’exécuter.
 
-Les touches ZQSD / WASD **ne dirigent plus le personnage**.
+Les autres immeubles restent **fermés et non visitables**. Il n’y a pas de téléportation libre entre les étages ni de système de quêtes.
 
-### Graphismes
+## Commandes
 
-- Personnage **civil en tee-shirt et jean**. Proportions plus discrètes : le modèle est réduit à 76 % de son échelle précédente, de sorte qu'il reste plus petit que les voitures. Sa main droite tient le pistolet.
-- **Perspective oblique**, caméra douce, soleil avec ombres, brume et flaques.
-- **Nature qui reconquiert la rue** : 3 300 herbes instanciées, 460 plaques de mousse irrégulières au sol, 64 panneaux de lierre sur les façades et 110 buissons. Leur densité se concentre aux bordures des trottoirs, joints du béton et murs. Ces éléments n'interrompent pas les déplacements.
-- Les arbres, façades, enseignes et véhicules de l'étude précédente restent présents.
-- Les matériaux de sol disposent de textures de secours procédurales ; certaines textures PBR de Poly Haven peuvent aussi être chargées en ligne.
+- **Clic gauche au sol** : marcher jusqu’à la destination en contournant les obstacles.
+- **Clic gauche sur l’étiquette d’une porte, d’un escalier ou d’une fenêtre** : se rapprocher et interagir.
+- **Double-clic / Maj + clic** : courir.
+- **Clic droit** : viser puis tirer ; le personnage garde son pistolet et le lève uniquement pour tirer.
+- **R** : recharger ; **Échap** : annuler un trajet.
+- **Molette** : zoom ; **flèches directionnelles** : faire pivoter ou incliner la caméra.
+- **H** : masquer l’interface ; **C** : recentrer.
+- Sur téléphone, toucher le sol pour se déplacer ; le bouton Tirer reste disponible.
 
-### Architecture
+## Structure du projet
 
-- \`index.html\`, \`street.css\` : interface.
-- \`street-demo.js\` : moteur d'exploration, caméra, rendu, armes.
-- \`click-navigation.js\` : recherche d'itinéraires au clic, collisions, lissage des trajectoires, repère de destination.
-- \`civilian.js\` : personnage civil avec animations simples des jambes et pistolet fixé à la main.
-- \`street-world.js\` : rue, immeubles, véhicules, matières.
-- \`overgrowth.js\` : herbes, mousse, buissons, lierre, textures végétales Canvas et instancing.
+- \`index.html\`, \`street.css\` : page et interface.
+- \`street-demo.js\` : vue perspective, caméra, personnage, actions et changement de niveau.
+- \`civilian.js\` : personnage civil en tee-shirt et pantalon, pistolet fixé à la main.
+- \`click-navigation.js\` : navigation A*, repères de déplacement, interactions au clic et plans de hauteur.
+- \`street-world.js\` : rue et intégration du bâtiment explorable.
+- \`visit-building.js\` : architecture, mobilier, portes, escalier, appartement, toit, fenêtre, collisions par niveau et masquage des étages.
+- \`overgrowth.js\` : herbe, mousse, lierre et buissons.
 
-Les prototypes historiques restent dans le dépôt mais **ne sont pas chargés** par l'accueil.
+Les anciennes versions du plateau tactique restent dans le dépôt mais ne sont plus chargées.
 
-### Limites
+## Limites de ce prototype
 
-Le décor et le personnage restent construits principalement en géométries 3D procédurales. C'est plus détaillé qu'un plateau de jeu, mais ce n'est pas un environnement photoréaliste de production. Pour progresser franchement vers ce rendu, il faudra des modèles de personnes et de végétation texturés professionnellement, des décors scannés, de meilleures animations et une optimisation graphique.
+Il s’agit d'une première exploration architecturale, **pas d’un jeu terminé**. Les bâtiments et objets sont principalement issus de géométries procédurales ; les ascensions, franchissements et ouvertures utilisent des animations simples, pas encore de captures de mouvement ni de système physique avancé. Les interactions ne sont pas toujours synchronisées à une animation de mains. Le rendu WebGL dans un véritable navigateur doit encore être examiné : les vérifications ont porté sur la syntaxe et les simulations de trajectoires/collisions.
 
-Les modules ont été vérifiés en syntaxe ; la création de décor et les trajectoires de contournement d'obstacles ont été simulées. Le rendu dans un vrai navigateur WebGL n'a pas encore été contrôlé de bout en bout.
+Texturations extérieures facultatives : [Poly Haven](https://polyhaven.com/) (CC0). Rendu : [Three.js](https://threejs.org/).
 
 © Valsane Studio.
