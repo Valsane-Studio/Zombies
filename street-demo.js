@@ -42,47 +42,23 @@ const player={root:playerRoot,velocity:new T.Vector3(),aim:new T.Vector3(0,0,-1)
 const character=createCivilian(T,playerRoot);
 const pistolRig=character.pistol;
 
-// Cible du curseur et caméra en plongée oblique, perspective réelle.
-const raycaster=new T.Raycaster();
-const screenPointer=new T.Vector2(0,0);
-const floorPlane=new T.Plane(new T.Vector3(0,1,0),0);
-const aimPoint=new T.Vector3(2,0,0);
+// Caméra perspective oblique. Clic gauche : déplacer ; clic droit : tirer.
 const cameraTarget=new T.Vector3(playerRoot.position.x,0,playerRoot.position.z);
-let heading=.42,pitch=.94,zoom=1;
-const pointer={x:innerWidth*.54,y:innerHeight*.54,active:false};
+let heading=.42,pitch=.96,zoom=1;
 function cameraOffset(){
  const d=36*zoom;
  return new T.Vector3(Math.sin(heading)*Math.cos(pitch)*d,Math.sin(pitch)*d,Math.cos(heading)*Math.cos(pitch)*d);
 }
 function updateCamera(dt,force=false){
- const target=new T.Vector3(playerRoot.position.x,0,playerRoot.position.z);
- cameraTarget.lerp(target,force?1:1-Math.exp(-dt*3.7));
- const goal=cameraTarget.clone().add(cameraOffset());
- camera.position.lerp(goal,force?1:1-Math.exp(-dt*4.0));
- camera.lookAt(cameraTarget.clone().add(new T.Vector3(0,1,0)));
+ cameraTarget.lerp(new T.Vector3(playerRoot.position.x,0,playerRoot.position.z),force?1:1-Math.exp(-dt*3.7));
+ camera.position.lerp(cameraTarget.clone().add(cameraOffset()),force?1:1-Math.exp(-dt*4.0));
+ camera.lookAt(cameraTarget.clone().add(new T.Vector3(0,.65,0)));
  sun.target.position.copy(cameraTarget);sun.position.copy(cameraTarget).add(new T.Vector3(-23,39,-7));
  sun.target.updateMatrixWorld();
 }
 updateCamera(.016,true);
-function resize(){
- renderer.setSize(window.innerWidth,window.innerHeight);
- camera.aspect=window.innerWidth/window.innerHeight;
- camera.updateProjectionMatrix();
-}
+function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);resize();
-function refreshAim(){
- if(!pointer.active)return;
- const rect=renderer.domElement.getBoundingClientRect();
- screenPointer.set((pointer.x-rect.left)/rect.width*2-1,-(pointer.y-rect.top)/rect.height*2+1);
- raycaster.setFromCamera(screenPointer,camera);
- const result=new T.Vector3();
- if(raycaster.ray.intersectPlane(floorPlane,result))aimPoint.copy(result);
-}
-function trackAim(e){
- pointer.x=e.clientX;pointer.y=e.clientY;pointer.active=true;
- refreshAim();
-}
-renderer.domElement.addEventListener('pointermove',trackAim);
 const keys=new Set();
 window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();
@@ -90,21 +66,25 @@ window.addEventListener('keydown',e=>{
  keys.add(k);
  if(e.repeat)return;
  if(k==='r')reload();
- if(k==='h'){document.body.classList.toggle('ui-hidden');note(document.body.classList.contains('ui-hidden')?'INTERFACE MASQUÉE':'INTERFACE VISIBLE',1)}
- if(k==='c'){cameraTarget.copy(playerRoot.position);updateCamera(.016,true);note('CAMÉRA RECENTRÉE',1.3)}
+ if(k==='escape'){navigation.clear();note('DÉPLACEMENT ANNULÉ',1)}
+ if(k==='h')document.body.classList.toggle('ui-hidden');
+ if(k==='c'){cameraTarget.copy(playerRoot.position);updateCamera(.016,true);note('VUE RECENTRÉE',1)}
 });
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>keys.clear());
-let shootingHeld=false;
-renderer.domElement.addEventListener('pointerdown',e=>{
- if(e.button===0){shootingHeld=true;shoot();renderer.domElement.setPointerCapture(e.pointerId)}
-});
-renderer.domElement.addEventListener('pointerup',e=>{if(e.button===0)shootingHeld=false});
-renderer.domElement.addEventListener('pointercancel',()=>shootingHeld=false);
-renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
 renderer.domElement.addEventListener('wheel',e=>{
  e.preventDefault();zoom=T.MathUtils.clamp(zoom*(e.deltaY>0?1.07:.93),.66,1.55);
 },{passive:false});
+function fireTowards(point){
+ if(!point)return;
+ navigation.faceAt(point,true);
+ player.aim.set(-Math.sin(playerRoot.rotation.y),0,-Math.cos(playerRoot.rotation.y));
+ shoot();
+}
+const navigation=createClickNavigation(T,{
+ world,scene,player:playerRoot,camera,canvas:renderer.domElement,onFire:fireTowards
+});
+
 let noticeExpiry=0,worldClock=0;
 function note(message,seconds=2.5){
  const el=$('notice');el.textContent=message;el.hidden=false;noticeExpiry=worldClock+seconds;
