@@ -1,9 +1,12 @@
-/* Valsane Studio — Zone Zéro, prototype 06 : survie solo */
+/* Valsane Studio — Zone Zéro, prototype 07 : survie tactique */
 import * as T from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
 import {createWorld} from './world.js';
 import {createSoundscape} from './audio.js';
 import {createEffects} from './effects.js';
 import {createLoot} from './loot.js';
+import {createVision} from './vision.js';
+import {createStealth} from './stealth.js';
+import {WEAPONS,MODES,profile,canUseMedkit} from './survival-rules.js';
 const $=id=>document.getElementById(id);
 const scene=new T.Scene();scene.background=new T.Color('#495c58');scene.fog=new T.FogExp2('#516660',.0085);
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
@@ -22,6 +25,8 @@ const world=createWorld(T,scene);
 const sound=createSoundscape();
 const fx=createEffects(T,scene,world);
 const loot=createLoot(T,scene,world);
+const vision=createVision(T,scene,world);
+const stealth=createStealth(world,vision);
 // Les navigateurs autorisent le son après un premier geste du joueur.
 document.addEventListener('pointerdown',()=>sound.unlock(),{passive:true});
 const basic=(color)=>new T.MeshStandardMaterial({color,roughness:.85});
@@ -90,464 +95,333 @@ function createActor(x,z,idx,isZombie=false){
 }
 // Mission de traversée : atteindre le point B avec tous les agents encore vivants.
 const start=world.mission.start,extraction=world.mission.exit;
-const starts=[[start.x,start.z]];
-starts.forEach(([x,z],i)=>{
-  const actor=createActor(x,z,i);
-  actor.selection.material.color.set(i===0?0xe3edbd:0x70aaa0);
-  squad.push({x,z,idx:i,actor,hp:100,maxHp:100,speed:4.65,ammo:12,magazine:12,reserve:36,reload:0,weapon:'pistol',unlocked:{pistol:true,carbine:false},inventory:{pistol:{ammo:12,reserve:36},carbine:{ammo:0,reserve:0}},cooldown:Math.random()*.25,path:[],destination:null,alive:true,kills:0,walking:false,buff:null,heading:0,animation:0});
-});
-let selected=0,credits=0,kills=0;
-let pickupsCollected=0;
-const selectedAgents=new Set([0]);
-let paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=-1,activeSectors=new Set();
-let mapUpdated=-1,nearExitMessage=false,followSelected=false;
+
+const start=world.mission.start,extraction=world.mission.exit;
+const p={idx:0,x:start.x,z:start.z,hp:100,maxHp:100,alive:true,actor:createActor(start.x,start.z,0),path:[],destination:null,walking:false,heading:0,animation:0,kills:0,
+  weapon:'pistol',magazine:12,ammo:12,reserve:30,inventory:{
+    pistol:{magazine:12,ammo:12,reserve:30},carbine:{magazine:25,ammo:0,reserve:0},shotgun:{magazine:6,ammo:0,reserve:0}
+  },unlocked:{pistol:true,carbine:false,shotgun:false},medkits:1,
+  stamina:100,mode:'walk',autoFire:false,flashlight:false,action:null,footstep:0,cooldown:0,reload:0,hitWarning:0,nearCover:false,buff:null};
+squad.push(p);
+let selected=0,credits=0,kills=0,pickupsCollected=0,paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=-1,focusInput=false;
+let lastVisionUpdate=-1,lastMiniTime=-1,lastThreat='CALME',lastPickupLabel='';
+const names=['SURVIVANT'];
+const torch=new T.SpotLight(0xffe8b0,0,20,Math.PI/6,.35,1.2);
+torch.castShadow=false;scene.add(torch);scene.add(torch.target);
+const beamGeometry=new T.ConeGeometry(4,13,22,1,true);
+const beam=new T.Mesh(beamGeometry,new T.MeshBasicMaterial({color:0xffebaf,transparent:true,opacity:.024,depthWrite:false,side:T.DoubleSide}));
+beam.visible=false;beam.rotation.x=Math.PI/2;scene.add(beam);
 function note(message,duration=3.5){const n=$('notice');n.textContent=message;n.classList.add('visible');notifyExpiry=time+duration}
-function isBoosted(p){
-  if(!p.alive||p.path.length||p.walking)return null;
-  return world.spots.find(s=>Math.hypot(p.x-s.x,p.z-s.z)<1.04&&Math.abs(world.heightAt(p.x,p.z)-s.y)<.38)||null;
+function setMode(mode){
+  if(!MODES[mode]||!p.alive)return;
+  if(mode==='sprint'&&p.stamina<12){note('TROP FATIGUÉ POUR COURIR');return}
+  p.mode=mode;updateHud(true);
 }
-function combatStats(p){
-  const high=world.heightAt(p.x,p.z)>1.4,boost=!!p.buff,walking=p.walking,carbine=p.weapon==='carbine';
-  return{accuracy:Math.min(.985,(carbine?.73:.78)+(high?.07:0)+(boost?.15:0)-(walking?.24:0)),
-    range:(carbine?24:16)+(high?4:0),cadence:carbine?(boost?4:2.8):(boost?2.85:2),cover:boost?.42:0,damage:carbine?33:28};
+function isBoosted(q){
+  if(!q.alive||q.walking||q.path.length)return null;
+  return world.spots.find(s=>Math.hypot(q.x-s.x,q.z-s.z)<1.04&&Math.abs(world.heightAt(q.x,q.z)-s.y)<.38)||null;
 }
-function select(i,add=false){
-  if(!squad[i]?.alive)return;
-  if(!add)selectedAgents.clear();
-  if(add&&selectedAgents.has(i)&&selectedAgents.size>1)selectedAgents.delete(i);
-  else selectedAgents.add(i);
-  selected=[...selectedAgents][0]??i;
-  renderSquad(true);
+function hasCover(q){
+  return !!q.buff||(q.mode==='sneak'&&stealth.coverNear(q));
 }
-function selectLasso(indices){
-  const valid=indices.filter(i=>squad[i]?.alive);
-  if(!valid.length){note('AUCUN AGENT DANS LA SÉLECTION',2);return}
-  selectedAgents.clear();valid.forEach(i=>selectedAgents.add(i));
-  selected=valid[0];
-  renderSquad(true);note(valid.length+' AGENT'+(valid.length>1?'S':'')+' SÉLECTIONNÉ'+(valid.length>1?'S':''),2.3);
+function combatStats(q){
+  const s=profile(q,world,hasCover(q));return{accuracy:s.accuracy,range:s.range,cadence:s.rate,cover:s.cover,damage:s.damage,noise:s.noise,reload:s.reload,falloff:s.falloff};
 }
-function recenterCamera(immediate=false){
-  const members=squad.filter(p=>p.alive&&selectedAgents.has(p.idx));
-  if(!members.length)return;
-  const x=members.reduce((sum,p)=>sum+p.x,0)/members.length,z=members.reduce((sum,p)=>sum+p.z,0)/members.length;
-  if(immediate)cameraCenter.set(x,0,z);
+function switchWeapon(type){
+  if(!p.alive)return;
+  if(!p.unlocked[type]){note('ARME NON TROUVÉE : EXPLOREZ LES CACHES');return}
+  if(p.action){note('ACTION EN COURS · ATTENDEZ');return}
+  if(p.weapon===type)return;
+  p.inventory[p.weapon].ammo=p.ammo;p.inventory[p.weapon].reserve=p.reserve;
+  p.weapon=type;p.magazine=WEAPONS[type].magazine;
+  p.ammo=p.inventory[type].ammo;p.reserve=p.inventory[type].reserve;
+  p.reload=0;p.cooldown=.25;updateHud(true);note(WEAPONS[type].name+' ÉQUIPÉ');
 }
-function renderSquad(force=false){
-  if(!force&&time-lastHud<.2)return;lastHud=time;
-  $('squadList').innerHTML=squad.map((p,i)=>{
-    const hp=Math.max(0,Math.ceil(p.hp));
-    return '<button data-agent="'+i+'" class="agent '+(selectedAgents.has(i)?'selected ':'')+(!p.alive?'dead':'')+'"><span class="tag">'+(i+1)+' · '+names[i]+'</span><span class="weapon">'+(p.weapon==='carbine'?'CARABINE / 5,56':'PISTOLET / 9 MM')+'</span><span class="hp"><i style="width:'+hp+'%"></i></span><span class="ammo">'+(p.alive?'PV '+hp+' · '+(p.reload>0?'RECHARGE':p.ammo+'/'+p.reserve):'HORS COMBAT')+'</span></button>';
-  }).join('');
-  $('squadList').querySelectorAll('[data-agent]').forEach(el=>el.onclick=()=>select(Number(el.dataset.agent)));
-  const p=squad[selected];if(!p)return;
-  p.buff=isBoosted(p);const stat=combatStats(p);
-  $('currentAgent').textContent=selectedAgents.size>1?'GROUPE ('+selectedAgents.size+')':names[selected];
-  if($('selectedCount'))$('selectedCount').textContent='01 SURVIVANT';
-  if($('ammoStatus'))$('ammoStatus').textContent=(p.weapon==='carbine'?'CARABINE':'PISTOLET')+' · '+p.ammo+' / '+p.reserve+' CART.';
-  if($('lootStatus'))$('lootStatus').textContent=pickupsCollected+' RAVITAILLEMENTS';
-  $('accuracy').textContent=Math.round(stat.accuracy*100)+' %';
-  $('firerate').textContent=stat.cadence.toFixed(1)+' /s';
-  $('range').textContent=stat.range+' m';
-  $('place').textContent=p.buff?p.buff.name:world.heightAt(p.x,p.z)>1.5?'EN HAUTEUR':p.walking?'EN DÉPLACEMENT':'POSITION LIBRE';
-  $('buff').textContent=p.buff?'APPUI ACTIF · +15 % PRÉCISION · +43 % CADENCE':'REJOIGNEZ UN CERCLE JAUNE';
-  $('buff').classList.toggle('on',!!p.buff);
+function startReload(){
+  if(p.action||!p.alive||p.reload>0||p.reserve<=0||p.ammo>=p.magazine)return;
+  p.reload=WEAPONS[p.weapon].reload;
+  note('RECHARGEMENT · '+WEAPONS[p.weapon].caliber,1.6);
 }
-function initializeInfected(){
+function startLoot(){
+  if(!p.alive||p.action)return;
+  const item=loot.nearest(p);
+  if(!item){note('AUCUNE CACHE À PORTÉE. APPROCHEZ-VOUS.',2.5);return}
+  p.path=[];p.action={type:'loot',item,remaining:1.6,total:1.6};
+  stealth.noise(p.x,p.z,3.5,'rummage',time);
+  updateHud(true);
+}
+function startHeal(){
+  if(!canUseMedkit(p)){note('SOINS INDISPONIBLES · KIT OU PV MAX.');return}
+  p.path=[];p.action={type:'heal',remaining:2.7,total:2.7};updateHud(true);
+  note('UTILISATION DU KIT : RESTEZ IMMOBILE',2.5);
+}
+function createZombies(){
   let variant=0;
   for(let k=0;k<world.mission.infestations.length;k++){
-    const c=world.mission.infestations[k];
-    for(let i=0;i<Math.max(1,Math.ceil(c.count/2));i++){
-      const a=(i/c.count)*Math.PI*2+.43*k;
-      const d=2.5+(i%3)*2.1;
-      const p=world.snap(c.x+Math.cos(a)*d,c.z+Math.sin(a)*d);
-      if(!p)continue;
-      const actor=createActor(p.x,p.z,variant++,true);
-      const hp=92+(i%3)*20+(k%2)*12;
-      zombies.push({x:p.x,z:p.z,actor,hp,maxHp:hp,speed:1.10+Math.random()*.3,
-        path:[],target:-1,think:Math.random()*1.8,cd:0,animation:Math.random()*5,
-        heading:0,damage:12+(k%3)*2,walking:false,alert:false,
-        group:k,origin:{x:p.x,z:p.z},bounty:160+Math.floor((hp-200)*.65)});
+    const zone=world.mission.infestations[k];
+    for(let i=0;i<Math.max(2,Math.ceil(zone.count*.72));i++){
+      const theta=i*Math.PI*2/Math.max(2,Math.ceil(zone.count*.72))+k*.67;
+      const dist=3+(i%3)*2.4;
+      const q=world.snap(zone.x+Math.cos(theta)*dist,zone.z+Math.sin(theta)*dist);
+      if(!q)continue;
+      const hp=93+(i%3)*23+(k%2)*12;
+      const actor=createActor(q.x,q.z,variant++,true);
+      zombies.push({x:q.x,z:q.z,hp,maxHp:hp,actor,cd:Math.random()*2,
+        speed:1.03+Math.random()*.25,damage:11+(k%3)*3,
+        state:'idle',alert:false,lastSeen:null,lastSighting:0,think:Math.random()*1.3,
+        path:[],target:-1,walking:false,heading:Math.random()*Math.PI*2,animation:Math.random()*5,
+        origin:{x:q.x,z:q.z},group:k,bounty:120+(k*9)});
     }
   }
 }
-initializeInfected();
+createZombies();
 function end(success){
   if(ended)return;ended=true;paused=true;
-  $('endTitle').textContent=success?'EXTRACTION RÉUSSIE':'ESCOUADE PERDUE';
-  const saved=squad.filter(p=>p.alive).length;
-  $('endText').textContent=(success?'Le point B est atteint. Vous avez survécu à la traversée.':'Votre survivant n’a pas atteint le point B.')+
-    ' '+kills+' infectés éliminés ; '+credits.toLocaleString('fr-FR')+' € de recherche.';
+  $('endTitle').textContent=success?'VOUS AVEZ SURVÉCU':'FIN DE PARCOURS';
+  $('endText').textContent=success
+    ?'La zone d’extraction est atteinte. '+kills+' infectés éliminés, '+pickupsCollected+' caches fouillées, '+vision.explorationPercent()+' % du secteur exploré.'
+    :'Le survivant n’a pas réussi à traverser la zone contaminée. Explorez les couverts, économisez les munitions et évitez les groupes.';
   $('endOverlay').hidden=false;
 }
 function bloodMark(x,z,y){
-  const mark=new T.Mesh(new T.CircleGeometry(.18+Math.random()*.27,16),new T.MeshBasicMaterial({color:0x5e2929,transparent:true,opacity:.37,depthWrite:false,side:T.DoubleSide}));
-  mark.rotation.x=-Math.PI/2;mark.position.set(x,y+.03,z);scene.add(mark);corpses.push(mark);
-  if(corpses.length>100){const old=corpses.shift();scene.remove(old);old.geometry.dispose();old.material.dispose()}
+  const mark=new T.Mesh(new T.CircleGeometry(.19+Math.random()*.25,16),new T.MeshBasicMaterial({color:0x502d29,transparent:true,opacity:.43,depthWrite:false,side:T.DoubleSide}));
+  mark.rotation.x=-Math.PI/2;mark.position.set(x,y+.035,z);scene.add(mark);corpses.push(mark);
+  if(corpses.length>80){const old=corpses.shift();scene.remove(old);old.geometry.dispose();old.material.dispose()}
 }
 function tracer(ax,ay,az,bx,by,bz,hit){
   const geo=new T.BufferGeometry().setFromPoints([new T.Vector3(ax,ay,az),new T.Vector3(bx,by,bz)]);
-  const line=new T.Line(geo,new T.LineBasicMaterial({color:hit?0xffe4a7:0xffba83,transparent:true,opacity:.95,depthWrite:false}));
-  scene.add(line);effects.push({mesh:line,life:.105,max:.105});
+  const line=new T.Line(geo,new T.LineBasicMaterial({color:hit?0xffdfad:0xbdae9b,transparent:true,opacity:.8,depthWrite:false}));
+  scene.add(line);effects.push({mesh:line,life:.09,max:.09});
 }
-function shoot(p,target){
-  const stats=combatStats(p);p.ammo--;p.cooldown=1/stats.cadence;
-  const dx=target.x-p.x,dz=target.z-p.z,dist=Math.hypot(dx,dz);
-  p.actor.group.rotation.y=Math.atan2(-dx,-dz);
-  const chance=Math.max(.2,Math.min(.985,stats.accuracy-Math.max(0,dist-5)*.017));
+function shoot(q,target){
+  const w=combatStats(q);q.ammo--;q.inventory[q.weapon].ammo=q.ammo;q.cooldown=1/w.cadence;
+  q.actor.group.rotation.y=Math.atan2(-(target.x-q.x),-(target.z-q.z));
+  const d=Math.hypot(target.x-q.x,target.z-q.z);
+  const chance=Math.min(.985,Math.max(.22,w.accuracy-Math.max(0,d-4)*w.falloff));
   const hit=Math.random()<chance;
-  let bx=target.x,bz=target.z;
-  const ay=world.heightAt(p.x,p.z)+1.38,by=world.heightAt(target.x,target.z)+1.1;
-  sound.shoot();fx.muzzle(p,target);
-  if(!hit){bx+=(Math.random()-.5)*2.7;bz+=(Math.random()-.5)*2.7}
-  tracer(p.x,ay,p.z,bx,by,bz,hit);
+  const tx=target.x+(hit?0:(Math.random()-.5)*2.6);
+  const tz=target.z+(hit?0:(Math.random()-.5)*2.6);
+  const ay=world.heightAt(q.x,q.z)+1.35,by=world.heightAt(target.x,target.z)+1.2;
+  sound.shoot();fx.muzzle(q,target);
+  stealth.noise(q.x,q.z,w.noise,'gunshot',time);
+  q.hitWarning=.6;
+  tracer(q.x,ay,q.z,tx,by,tz,hit);
   if(hit){
-    fx.hit(target);sound.impact();target.hp-=stats.damage;
+    let damage=w.damage;
+    if(q.weapon==='shotgun')damage*=Math.max(.45,1-d*.042);
+    fx.hit(target);sound.impact();target.hp-=damage;
     target.actor.hpGroup.visible=true;
     if(target.hp<=0){
       bloodMark(target.x,target.z,world.heightAt(target.x,target.z));
       fx.kill(target);sound.death();
-      credits+=target.bounty;kills++;p.kills++;
+      credits+=target.bounty;kills++;q.kills++;
     }
   }
 }
-function nearestTarget(p){
-  let target=null,dist=Infinity;const maxRange=combatStats(p).range;
-  for(const z of zombies){
-    if(z.hp<=0)continue;
-    const d=Math.hypot(p.x-z.x,p.z-z.z);
-    if(d<dist&&d<=maxRange&&world.visible(p,z)){target=z;dist=d}
+function nearestTarget(q){
+  const w=combatStats(q);let target=null,best=w.range;
+  for(const z of zombies)if(z.hp>0){
+    const d=Math.hypot(q.x-z.x,q.z-z.z);
+    if(d<best&&vision.canSee(z.x,z.z)&&vision.hasLineOfSight(q,z)){target=z;best=d}
   }
   return target;
 }
-function moveAlong(p,dt){
-  p.walking=false;
-  if(!p.path.length)return;
-  const node=p.path[0],dx=node.x-p.x,dz=node.z-p.z,d=Math.hypot(dx,dz);
-  if(d<.19){p.path.shift();if(!p.path.length)p.destination=null;return}
-  const step=Math.min(d,p.speed*dt);
-  p.x+=dx/d*step;p.z+=dz/d*step;
-  p.heading=Math.atan2(-dx,-dz);p.walking=true;
+function moveAlong(q,dt){
+  q.walking=false;
+  if(!q.path.length)return;
+  const node=q.path[0],dx=node.x-q.x,dz=node.z-q.z,dist=Math.hypot(dx,dz);
+  if(dist<.18){q.path.shift();return}
+  const speed=q===p?MODES[q.mode].speed*(q.stamina<8?.73:1):q.speed;
+  const step=Math.min(dist,speed*dt);
+  q.x+=dx/dist*step;q.z+=dz/dist*step;q.heading=Math.atan2(-dx,-dz);q.walking=true;
 }
-function updateActors(dt){
-  for(const p of squad){
-    if(!p.alive)continue;
-    moveAlong(p,dt);
-    p.buff=isBoosted(p);
-    p.actor.group.position.set(p.x,world.heightAt(p.x,p.z),p.z);
-    p.actor.selection.material.opacity=selectedAgents.has(p.idx)?.95:.2;
-    p.actor.selection.material.color.set(p.buff?0xf6cb5c:selectedAgents.has(p.idx)?0xa9e4d2:0x7bafa4);
-    p.cooldown=Math.max(0,p.cooldown-dt);
-    if(p.reload>0){p.reload-=dt;if(p.reload<=0){const n=Math.min(p.magazine-p.ammo,p.reserve);p.ammo+=n;p.reserve-=n}}
-    else if(p.ammo<=0&&p.reserve>0)p.reload=p.weapon==='carbine'?2.1:1.65;
-    else if(p.cooldown<=0){const z=nearestTarget(p);if(z)shoot(p,z)}
-    if(p.walking){
-      p.animation+=dt*9;
-      p.actor.legs[0].rotation.x=Math.sin(p.animation)*.4;
-      p.actor.legs[1].rotation.x=-Math.sin(p.animation)*.4;
-      p.actor.group.rotation.y=p.heading;
-    }else{
-      p.actor.legs[0].rotation.x*=.76;p.actor.legs[1].rotation.x*=.76;
+function updatePlayer(dt){
+  if(!p.alive)return;
+  p.buff=isBoosted(p);
+  if(p.action){
+    p.path=[];p.action.remaining-=dt;
+    if(p.action.remaining<=0){
+      const action=p.action;p.action=null;
+      if(action.type==='heal'){
+        p.medkits--;p.hp=Math.min(p.maxHp,p.hp+48);note('SOINS TERMINÉS · +48 PV MAX.');
+      }else if(action.type==='loot'){
+        const got=loot.collect(p,action.item);
+        if(got){pickupsCollected++;note(got,4)}
+      }
     }
-    p.actor.hpBar.scale.x=Math.max(.02,p.hp/p.maxHp);
-    p.actor.hpBar.position.x=-(1-p.hp/p.maxHp)*.47;
-    p.actor.hpGroup.quaternion.copy(camera.quaternion);
+  }else moveAlong(p,dt);
+  const breathing=p.mode==='sprint'&&p.walking?-16:p.mode==='sneak'?8:10;
+  p.stamina=Math.max(0,Math.min(100,p.stamina+dt*breathing));
+  if(p.mode==='sprint'&&p.stamina<=1){p.mode='walk';note('ESSOUFFLÉ · PASSAGE EN MARCHE')}
+  p.nearCover=stealth.coverNear(p);p.buff=isBoosted(p);
+  p.actor.group.position.set(p.x,world.heightAt(p.x,p.z),p.z);
+  const s=p.mode==='sneak'?.66:1;
+  p.actor.torso.scale.y+=(s-p.actor.torso.scale.y)*Math.min(1,dt*10);
+  p.actor.head.position.y+=(p.mode==='sneak'?1.52:1.98-p.actor.head.position.y)*Math.min(1,dt*8);
+  p.actor.selection.material.color.set(p.mode==='sneak'?0xe9c77c:0x9dd3b6);
+  p.cooldown=Math.max(0,p.cooldown-dt);p.hitWarning=Math.max(0,p.hitWarning-dt);
+  if(p.reload>0){
+    p.reload-=dt;
+    if(p.reload<=0){
+      const qty=Math.min(p.magazine-p.ammo,p.reserve);
+      p.ammo+=qty;p.reserve-=qty;
+      p.inventory[p.weapon].ammo=p.ammo;p.inventory[p.weapon].reserve=p.reserve;
+    }
+  }else if(!p.action&&p.ammo<=0&&p.reserve>0)startReload();
+  else if(p.autoFire&&!p.action&&p.cooldown<=0&&p.ammo>0){
+    const z=nearestTarget(p);if(z)shoot(p,z);
   }
+  p.footstep-=dt;
+  if(p.walking&&p.footstep<=0){
+    stealth.noise(p.x,p.z,MODES[p.mode].footstep,'footstep',time);
+    p.footstep=p.mode==='sprint'?.4:p.mode==='sneak'?.86:.6;
+  }
+  if(p.walking){
+    p.animation+=dt*(p.mode==='sprint'?12:p.mode==='sneak'?5.5:8.6);
+    p.actor.legs[0].rotation.x=Math.sin(p.animation)*(p.mode==='sneak'?.18:.36);
+    p.actor.legs[1].rotation.x=-Math.sin(p.animation)*(p.mode==='sneak'?.18:.36);
+    p.actor.group.rotation.y=p.heading;
+  }else{p.actor.legs[0].rotation.x*=.7;p.actor.legs[1].rotation.x*=.7}
+  p.actor.hpBar.scale.x=Math.max(.02,p.hp/p.maxHp);p.actor.hpBar.position.x=-(1-p.hp/p.maxHp)*.47;
+  p.actor.hpGroup.quaternion.copy(camera.quaternion);
+  torch.intensity=p.flashlight?11:0;
+  torch.position.set(p.x,world.heightAt(p.x,p.z)+1.8,p.z);
+  torch.target.position.set(p.x-Math.sin(p.heading)*9,world.heightAt(p.x,p.z)+.3,p.z-Math.cos(p.heading)*9);
+  torch.target.updateMatrixWorld();
+  beam.visible=p.flashlight;
+  if(p.flashlight){beam.position.set(p.x-Math.sin(p.heading)*4,world.heightAt(p.x,p.z)+1.1,p.z-Math.cos(p.heading)*4);beam.rotation.y=p.heading}
 }
-function updateZombies(dt){
+function updateInfected(dt){
   for(let i=zombies.length-1;i>=0;i--){
     const z=zombies[i];
     if(z.hp<=0){zombies.splice(i,1);continue}
-    let closest=null,best=Infinity;
-    for(const p of squad)if(p.alive){
-      const distance=Math.hypot(p.x-z.x,p.z-z.z);
-      if(distance<best){best=distance;closest=p}
-    }
-    if(!z.alert&&best<25){
-      z.alert=true;z.think=.04;
-      if(!activeSectors.has(z.group)){
-        activeSectors.add(z.group);
-        note('ALERTE · SECTEUR INFESTÉ : '+world.mission.infestations[z.group].name,3.3);
-      }
-    }
     z.think-=dt;z.cd-=dt;
-    if(z.alert&&closest){
-      if(z.think<=0){
-        // Zombies volontairement stupides : priorité absolue au survivant le plus proche.
-        z.target=closest.idx;
-        z.path=world.pathfind(z,closest);
-        z.think=1.15+Math.random()*.5;
-      }
-      const p=squad[z.target]?.alive?squad[z.target]:closest;
-      const distance=Math.hypot(p.x-z.x,p.z-z.z);
-      const diff=Math.abs(world.heightAt(p.x,p.z)-world.heightAt(z.x,z.z));
-      if(distance<.92&&diff<.72){
-        if(z.cd<=0){
-          p.hp=Math.max(0,p.hp-z.damage*(1-(p.buff?.42:0)));z.cd=1.4;
-          if(p.hp<=0){
-            p.alive=false;p.actor.selection.material.color.set(0x645b58);
-            p.actor.group.rotation.z=-.85;note(names[p.idx]+' HORS COMBAT',3.2);
-            selectedAgents.delete(p.idx);
-            if(selected===p.idx){const next=squad.find(q=>q.alive);if(next){selected=next.idx;selectedAgents.add(next.idx)}}
-            if(squad.every(q=>!q.alive))end(false);
-          }
+    const distance=Math.hypot(p.x-z.x,p.z-z.z);
+    const sees=stealth.visibleTo(z,p);
+    if(z.think<=0){
+      const decision=stealth.updateZombie(z,p,time);
+      if(decision.state==='chase'||decision.state==='search'||decision.state==='investigate'){
+        const target=decision.destination;
+        if(target&&Math.hypot(target.x-z.x,target.z-z.z)>.85)z.path=world.pathfind(z,target);
+      }else{
+        if(!z.path.length&&Math.random()<.32){
+          const home=z.origin,d=Math.random()*3.2,angle=Math.random()*Math.PI*2;
+          const target={x:home.x+Math.cos(angle)*d,z:home.z+Math.sin(angle)*d};
+          if(!world.obstruction(target.x,target.z,.4))z.path=world.pathfind(z,target);
         }
-      }else moveAlong(z,dt);
+      }
+      z.think=(sees?.52:1.3)+Math.random()*.42;
     }
+    if(distance<.89&&p.alive&&Math.abs(world.heightAt(p.x,p.z)-world.heightAt(z.x,z.z))<.75){
+      if(z.cd<=0){
+        const protection=p.mode==='sneak'&&hasCover(p)?.18:0;
+        p.hp=Math.max(0,p.hp-z.damage*(1-protection));z.cd=1.55;
+        p.hitWarning=1.1;note('CONTACT · -'+Math.ceil(z.damage*(1-protection))+' PV',1.2);
+        if(!p.hp){p.alive=false;p.actor.group.rotation.z=-.9;end(false)}
+      }
+    }else moveAlong(z,dt);
     z.actor.group.position.set(z.x,world.heightAt(z.x,z.z),z.z);
     z.actor.group.rotation.y=z.heading;
-    z.animation+=dt*(z.walking?5.5:1.6);
-    z.actor.legs[0].rotation.x=Math.sin(z.animation)*.24;
-    z.actor.legs[1].rotation.x=-Math.sin(z.animation)*.22;
-    z.actor.torso.rotation.z=.16+Math.sin(z.animation*.7)*.03;
-    z.actor.hpGroup.visible=z.alert||z.hp<z.maxHp;
-    z.actor.hpBar.scale.x=Math.max(.02,z.hp/z.maxHp);
+    z.actor.group.visible=vision.canSee(z.x,z.z);
+    z.actor.hpGroup.visible=z.actor.group.visible&&(z.alert||z.hp<z.maxHp);
+    z.actor.hpBar.scale.x=Math.max(.01,z.hp/z.maxHp);
     z.actor.hpBar.position.x=-(1-z.hp/z.maxHp)*.47;
     z.actor.hpGroup.quaternion.copy(camera.quaternion);
+    z.animation+=dt*(z.walking?5.2:1.4);
+    z.actor.legs[0].rotation.x=Math.sin(z.animation)*.25;
+    z.actor.legs[1].rotation.x=-Math.sin(z.animation)*.25;
   }
+}
+function updateLoot(dt){
+  loot.update(time,vision);
+  const item=loot.nearest(p);
+  lastPickupLabel=item?loot.meta[item.type].name:'';
 }
 function checkExtraction(){
-  const alive=squad.filter(p=>p.alive);
-  if(!alive.length)return;
-  const n=alive.filter(p=>Math.hypot(p.x-extraction.x,p.z-extraction.z)<extraction.radius).length;
-  if(n===alive.length){end(true);return}
-  if(n>0&&!nearExitMessage){
-    nearExitMessage=true;note('EXTRACTION : REGROUPEZ TOUS LES AGENTS SURVIVANTS AU POINT B',4.2);
-  }
-  if(!n)nearExitMessage=false;
-}
-function updatePickups(dt){
-  loot.update(time);
-  const p=squad[0];if(!p.alive)return;
-  const found=loot.collect(p);
-  for(const message of found){pickupsCollected++;note(message,4.2);renderSquad(true)}
-}
-function switchWeapon(type){
-  const p=squad[0];if(!p?.alive)return;
-  if(!p.unlocked[type]){note('CARABINE À DÉCOUVRIR DANS LA VILLE',2.5);return}
-  if(p.weapon===type)return;
-  p.inventory[p.weapon]={ammo:p.ammo,reserve:p.reserve};
-  p.weapon=type;p.magazine=type==='carbine'?20:12;
-  p.ammo=p.inventory[type].ammo;p.reserve=p.inventory[type].reserve;
-  p.reload=0;p.cooldown=.25;renderSquad(true);
-  note('ARME ÉQUIPÉE : '+(type==='carbine'?'CARABINE':'PISTOLET'),2);
+  if(p.alive&&Math.hypot(p.x-extraction.x,p.z-extraction.z)<extraction.radius)end(true);
 }
 function missionHud(){
-  const alive=squad.filter(p=>p.alive);
-  const mean=alive.length?alive.reduce((s,p)=>s+Math.hypot(p.x-extraction.x,p.z-extraction.z),0)/alive.length:0;
-  const original=Math.hypot(start.x-extraction.x,start.z-extraction.z);
-  const progress=Math.max(0,Math.min(1,1-mean/original));
-  $('wave').textContent='POINT B · '+Math.round(mean)+' M';
-  $('waveState').textContent='SURVIE · '+(alive[0]?Math.ceil(alive[0].hp):0)+' PV';
-  $('infected').textContent=String(zombies.length).padStart(2,'0');
-  $('kills').textContent=String(kills).padStart(2,'0');
+  const dist=Math.hypot(p.x-extraction.x,p.z-extraction.z),full=Math.hypot(start.x-extraction.x,start.z-extraction.z);
+  $('wave').textContent='EXTRACTION · '+Math.round(dist)+' M';
+  $('progress').style.width=Math.round(Math.max(0,Math.min(1,1-dist/full))*100)+'%';
+  $('progressText').textContent=vision.explorationPercent()+' % DE LA VILLE EXPLORÉE';
+  $('waveState').textContent=p.hp>0?'SURVIE · '+Math.round(p.hp)+' PV':'HORS COMBAT';
+  $('infected').textContent='??';$('kills').textContent=String(kills).padStart(2,'0');
   $('money').textContent=credits.toLocaleString('fr-FR')+' €';
-  $('progress').style.width=Math.round(progress*100)+'%';
-  $('progressText').textContent=Math.round(progress*100)+' % DU TRAJET';
+}
+function updateHud(force=false){
+  if(!force&&time-lastHud<.18)return;lastHud=time;
+  const weapon=WEAPONS[p.weapon],stats=combatStats(p),cover=hasCover(p);
+  $('currentAgent').textContent='SURVIVANT';
+  $('place').textContent=p.action?(p.action.type==='heal'?'SOINS EN COURS':'FOUILLE EN COURS'):cover?'POSITION À COUVERT':p.mode==='sneak'?'PROGRESSION DISCRÈTE':p.mode==='sprint'?'EN COURSE':'EN DÉPLACEMENT LIBRE';
+  $('accuracy').textContent=Math.round(stats.accuracy*100)+' %';
+  $('firerate').textContent=stats.cadence.toFixed(1)+' /s';$('range').textContent=stats.range+' M';
+  $('buff').textContent=cover?'COUVERT / STABILITÉ · PRÉCISION AMÉLIORÉE':'UTILISEZ MURS, VOITURES ET MURETS';
+  $('buff').classList.toggle('on',cover);
+  $('ammoStatus').textContent=weapon.name+' · '+p.ammo+' / '+p.reserve+' '+weapon.caliber;
+  $('lootStatus').textContent=pickupsCollected+' CACHES FOUILLÉES';
+  $('healthVal').textContent=Math.ceil(p.hp)+' / 100';
+  $('healthBar').style.width=p.hp+'%';
+  $('staminaVal').textContent=Math.round(p.stamina)+' / 100';
+  $('staminaBar').style.width=p.stamina+'%';
+  $('threatLabel').textContent=stealth.threat(p,zombies);
+  $('threatLabel').dataset.level=$('threatLabel').textContent;
+  $('searchHint').textContent=p.action?'ACTION · '+Math.ceil(p.action.remaining)+' S':lastPickupLabel?'[ E ] FOUILLER · '+lastPickupLabel:'APPROCHEZ-VOUS DES CACHES POUR FOUILLER';
+  $('medkitCount').textContent='SOINS × '+p.medkits;
+  $('autoFire').textContent=p.autoFire?'TIR AUTO : ON':'TIR AUTO : OFF';
+  $('autoFire').classList.toggle('active',p.autoFire);
+  $('flashlight').textContent=p.flashlight?'LAMPE : ON':'LAMPE : OFF';
+  $('flashlight').classList.toggle('active',p.flashlight);
+  $('actionProgress').style.width=p.action?Math.round((1-p.action.remaining/p.action.total)*100)+'%':'0%';
+  for(const mode of ['sneak','walk','sprint'])$('mode-'+mode).classList.toggle('active',p.mode===mode);
+  for(const key of ['pistol','carbine','shotgun']){
+    const el=$('weapon-'+key);el.disabled=!p.unlocked[key];el.classList.toggle('active',p.weapon===key);
+  }
+  $('medkit').disabled=p.medkits<=0||p.hp>=100;
+  $('scavenge').disabled=!lastPickupLabel;
+  missionHud();
 }
 function tick(dt){
   time+=dt;
-  updateActors(dt);updateZombies(dt);updatePickups(dt);fx.update(dt);
-  checkExtraction();
+  updatePlayer(dt);
+  if(time-lastVisionUpdate>.16){
+    const radius=(p.mode==='sneak'?15:19)+(p.flashlight?7:0)+(world.heightAt(p.x,p.z)>1.5?5:0);
+    vision.update(p,radius);lastVisionUpdate=time;
+  }
+  updateInfected(dt);updateLoot(dt);fx.update(dt);checkExtraction();
   for(let i=effects.length-1;i>=0;i--){
     const e=effects[i];e.life-=dt;e.mesh.material.opacity=Math.max(0,e.life/e.max);
     if(e.life<=0){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose();effects.splice(i,1)}
   }
   if(notifyExpiry<time)$('notice').classList.remove('visible');
-  if(time-lastHud>.2){missionHud();renderSquad();}
+  updateHud();
 }
 function drawMiniMap(){
   const canvas=$('minimap'),g=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
-  const bounds=world.bounds,sx=w/(bounds.maxX-bounds.minX),sy=h/(bounds.maxZ-bounds.minZ);
-  const tx=x=>(x-bounds.minX)*sx,tz=z=>(z-bounds.minZ)*sy;
-  g.fillStyle='#23302e';g.fillRect(0,0,w,h);
-  g.fillStyle='#52615b';
-  for(const x of world.roadX)g.fillRect(tx(x-4.6),0,9.2*sx,h);
-  for(const z of world.roadZ)g.fillRect(0,tz(z-4.6),w,9.2*sy);
-  g.fillStyle='#121c1e';
-  for(const b of world.footprints)g.fillRect(tx(b.x-b.w/2),tz(b.z-b.d/2),b.w*sx,b.d*sy);
-  g.fillStyle='#9c705d';
-  for(const b of world.roadblocks)g.fillRect(tx(b.x-b.w/2),tz(b.z-b.d/2),Math.max(2,b.w*sx),Math.max(2,b.d*sy));
-  for(const c of world.mission.infestations){
-    g.beginPath();g.arc(tx(c.x),tz(c.z),c.radius*sx,0,Math.PI*2);
-    g.fillStyle='#b8575440';g.fill();g.strokeStyle='#d0756468';g.lineWidth=.8;g.stroke();
+  const {minX,maxX,minZ,maxZ}=world.bounds,wx=maxX-minX,wz=maxZ-minZ,sx=w/wx,sz=h/wz;
+  const px=x=>(x-minX)*sx,pz=z=>(z-minZ)*sz;
+  g.fillStyle='#0a1417';g.fillRect(0,0,w,h);
+  // La carte ne révèle jamais les rues et les obstacles non explorés.
+  const cells=83,rows=60,cellX=wx/cells,cellZ=wz/rows;
+  for(let zi=0;zi<rows;zi++)for(let xi=0;xi<cells;xi++){
+    const x=minX+(xi+.5)*cellX,z=minZ+(zi+.5)*cellZ;
+    if(!vision.discovered(x,z))continue;
+    let fill='#455750';
+    if(world.footprints.some(b=>Math.abs(x-b.x)<b.w/2&&Math.abs(z-b.z)<b.d/2))fill='#202b2c';
+    else if(world.roadX.some(a=>Math.abs(x-a)<4.7)||world.roadZ.some(a=>Math.abs(z-a)<4.7))fill='#5a665e';
+    if(!vision.canSee(x,z))fill=fill==='#202b2c'?'#182425':'#354640';
+    g.fillStyle=fill;g.fillRect(xi*w/cells,zi*h/rows,Math.ceil(w/cells)+.3,Math.ceil(h/rows)+.3);
   }
-  for(const s of world.spots){g.beginPath();g.arc(tx(s.x),tz(s.z),3,0,Math.PI*2);g.fillStyle='#f1cc67';g.fill()}
-  for(const z of zombies){g.beginPath();g.arc(tx(z.x),tz(z.z),z.alert?2.3:1.5,0,Math.PI*2);g.fillStyle=z.alert?'#f4a19b':'#a96663';g.fill()}
-  g.beginPath();g.arc(tx(start.x),tz(start.z),3,0,Math.PI*2);g.fillStyle='#dbece0';g.fill();
-  g.beginPath();g.arc(tx(extraction.x),tz(extraction.z),5,0,Math.PI*2);g.strokeStyle='#8ce5ba';g.lineWidth=2;g.stroke();
-  g.fillStyle='#9ee4c8';g.font='bold 10px sans-serif';g.fillText('B',tx(extraction.x)-3,tz(extraction.z)+3);
-  for(const p of squad)if(p.alive){
-    g.beginPath();g.arc(tx(p.x),tz(p.z),selectedAgents.has(p.idx)?4.3:3.1,0,Math.PI*2);
-    g.fillStyle=selectedAgents.has(p.idx)?'#fcf0bf':'#83c5d9';g.fill();
-    if(selectedAgents.has(p.idx)){g.strokeStyle='#fff';g.lineWidth=1.3;g.stroke()}
+  for(const item of loot.items)if(!item.found&&vision.discovered(item.x,item.z)){
+    g.fillStyle=item.type==='medkit'?'#a0dcb4':'#d4bb81';g.fillRect(px(item.x)-1,pz(item.z)-1,3,3);
   }
-  // Centre de vue, pour faciliter la traversée de la grande carte.
-  g.strokeStyle='#d9eee385';g.lineWidth=1;g.beginPath();
-  g.moveTo(tx(cameraCenter.x)-5,tz(cameraCenter.z));g.lineTo(tx(cameraCenter.x)+5,tz(cameraCenter.z));
-  g.moveTo(tx(cameraCenter.x),tz(cameraCenter.z)-5);g.lineTo(tx(cameraCenter.x),tz(cameraCenter.z)+5);g.stroke();
-}
-// Caméra tactique : glisser = parcourir la carte ; Maj + glisser = lasso multi-agents.
-// Angle fixe pour ne pas faire pivoter la carte involontairement.
-let azimuth=-.74,zoom=.86,cameraCenter=new T.Vector3(start.x,0,start.z);
-function cameraUpdate(){
-  const distance=44,angle=1.02;
-  camera.position.set(cameraCenter.x+distance*Math.sin(azimuth)*Math.cos(angle),
-    cameraCenter.y+distance*Math.sin(angle),
-    cameraCenter.z+distance*Math.cos(azimuth)*Math.cos(angle));
-  camera.lookAt(cameraCenter);
-  sun.position.set(cameraCenter.x-18,31,cameraCenter.z+16);
-  sun.target.position.set(cameraCenter.x,0,cameraCenter.z);
-  sun.target.updateMatrixWorld();
-}
-function resize(){
-  const width=innerWidth,height=innerHeight,scale=(width<700?20:17.6)*zoom;
-  camera.left=-scale*width/height;camera.right=scale*width/height;camera.top=scale;camera.bottom=-scale;camera.updateProjectionMatrix();
-  renderer.setSize(width,height);cameraUpdate();
-}
-window.addEventListener('resize',resize);resize();
-const canvas=renderer.domElement;
-const lasso=$('lasso');
-let down=null;
-function setupPointer(e){
-  const r=canvas.getBoundingClientRect();
-  mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
-  pickCircle.setFromCamera(mouse,camera);
-}
-function updateLassoRect(x0,y0,x1,y1){
-  const left=Math.min(x0,x1),top=Math.min(y0,y1);
-  lasso.style.left=left+'px';lasso.style.top=top+'px';
-  lasso.style.width=Math.abs(x1-x0)+'px';
-  lasso.style.height=Math.abs(y1-y0)+'px';
-}
-function hitAgent(e){
-  setupPointer(e);
-  const agents=squad.filter(p=>p.alive);
-  const hits=pickCircle.intersectObjects(agents.map(p=>p.actor.group),true);
-  for(const h of hits){
-    let g=h.object;
-    while(g&&g.parent!==scene)g=g.parent;
-    const player=agents.find(p=>p.actor.group===g);
-    if(player)return player;
+  for(const z of zombies)if(z.hp>0&&vision.canSee(z.x,z.z)){
+    g.fillStyle='#cf8777';g.beginPath();g.arc(px(z.x),pz(z.z),2.1,0,Math.PI*2);g.fill();
   }
-  return null;
+  // L'emplacement du point B est donné par le scénario, pas sa topographie.
+  g.strokeStyle='#8ddbb2';g.lineWidth=1.7;g.beginPath();g.arc(px(extraction.x),pz(extraction.z),4.2,0,Math.PI*2);g.stroke();
+  g.fillStyle='#cefde5';g.font='bold 10px sans-serif';g.fillText('B',px(extraction.x)-3,pz(extraction.z)-6);
+  g.fillStyle='#f7d78d';g.beginPath();g.arc(px(p.x),pz(p.z),4,0,Math.PI*2);g.fill();
+  g.strokeStyle='#bbd4c4';g.lineWidth=1;g.beginPath();g.moveTo(px(cameraCenter.x)-5,pz(cameraCenter.z));g.lineTo(px(cameraCenter.x)+5,pz(cameraCenter.z));
+  g.moveTo(px(cameraCenter.x),pz(cameraCenter.z)-5);g.lineTo(px(cameraCenter.x),pz(cameraCenter.z)+5);g.stroke();
 }
-function groupMove(goal){
-  if(world.obstruction(goal.x,goal.z,.35)){
-    note('PASSAGE BOUCHÉ : CHOISISSEZ UN SOL ACCESSIBLE',2.2);return;
-  }
-  const members=squad.filter(p=>p.alive&&selectedAgents.has(p.idx));
-  if(!members.length)return;
-  // Petites formations distinctes : les agents n'occupent jamais tous le même point.
-  const offsets={1:[[0,0]],2:[[-.8,0],[.8,0]],3:[[-.8,-.7],[.8,-.7],[0,.75]],
-    4:[[-.85,-.85],[.85,-.85],[-.85,.85],[.85,.85]]}[members.length];
-  let ordered=0;
-  for(let i=0;i<members.length;i++){
-    const p=members[i],[ox,oz]=offsets[i];let path=[];
-    // En cas de couvert étroit, utiliser la case praticable la plus proche.
-    const trial=[[ox,oz],[ox*.5,oz*.5],[0,0],[-ox,oz],[ox,-oz]];
-    for(const [dx,dz] of trial){
-      const destination={x:goal.x+dx,z:goal.z+dz};
-      if(world.obstruction(destination.x,destination.z,.38))continue;
-      path=world.pathfind(p,destination);
-      if(path.length){p.destination=destination;break}
-    }
-    if(path.length){p.path=path;p.buff=null;ordered++}
-  }
-  if(ordered)note(ordered+' ORDRE'+(ordered>1?'S':'')+' DE DÉPLACEMENT',1.6);
-  else note('AUCUN ITINÉRAIRE : PASSAGE INACCESSIBLE',2.4);
-  renderSquad(true);
-}
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('pointerdown',e=>{
-  if(e.button!==0&&e.button!==2)return;
-  const box=canvas.getBoundingClientRect();
-  const mode='pan'; // Zombies se joue seul : glisser sert toujours à explorer la carte.
-  down={pointerId:e.pointerId,x:e.clientX,y:e.clientY,center:cameraCenter.clone(),mode,button:e.button,moved:false};
-  if(mode==='lasso'){
-    followSelected=false;
-    lasso.hidden=false;
-    updateLassoRect(e.clientX,e.clientY,e.clientX,e.clientY);
-  }
-  canvas.setPointerCapture(e.pointerId);
-});
-canvas.addEventListener('pointermove',e=>{
-  if(!down||e.pointerId!==down.pointerId)return;
-  const dx=e.clientX-down.x,dy=e.clientY-down.y;
-  if(Math.hypot(dx,dy)>5)down.moved=true;
-  if(down.mode==='lasso'){
-    updateLassoRect(down.x,down.y,e.clientX,e.clientY);
-  }else if(down.moved){
-    followSelected=false;
-    const magnitude=.038*zoom;
-    const horizontal=new T.Vector3(Math.cos(azimuth),0,-Math.sin(azimuth));
-    const vertical=new T.Vector3(-Math.sin(azimuth),0,-Math.cos(azimuth));
-    cameraCenter.copy(down.center).addScaledVector(horizontal,-dx*magnitude).addScaledVector(vertical,dy*magnitude);
-    cameraUpdate();
-  }
-});
-canvas.addEventListener('pointerup',e=>{
-  if(!down||e.pointerId!==down.pointerId)return;
-  const state=down;down=null;
-  lasso.hidden=true;
-  if(ended)return;
-  if(state.mode==='lasso'){
-    if(state.moved){
-      const rect=canvas.getBoundingClientRect(),left=Math.min(state.x,e.clientX),right=Math.max(state.x,e.clientX),
-        top=Math.min(state.y,e.clientY),bottom=Math.max(state.y,e.clientY);
-      const inside=squad.filter(p=>{
-        if(!p.alive)return false;
-        const worldPos=new T.Vector3(p.x,world.heightAt(p.x,p.z)+1.1,p.z).project(camera);
-        const sx=rect.left+(worldPos.x+1)*rect.width/2,sy=rect.top+(1-worldPos.y)*rect.height/2;
-        return sx>=left&&sx<=right&&sy>=top&&sy<=bottom;
-      }).map(p=>p.idx);
-      selectLasso(inside);
-    }else{
-      const player=hitAgent(e);if(player)select(player.idx,true);
-    }
-    return;
-  }
-  if(state.moved||state.button===2)return;
-  const player=hitAgent(e);
-  if(player){select(player.idx);return}
-  setupPointer(e);
-  const target=world.clickPoint(pickCircle);
-  if(target)groupMove(target);
-});
-canvas.addEventListener('pointercancel',()=>{down=null;lasso.hidden=true});
-canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.53,Math.min(2.15,zoom*(e.deltaY>0?1.075:.93)));resize()},{passive:false});
-function togglePause(force){paused=typeof force==='boolean'?force:!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'}
-$('locate').onclick=()=>{followSelected=false;recenterCamera(true);note('CAMÉRA RECENTRÉE',1.6)};
-$('minimap').addEventListener('click',e=>{
-  const r=$('minimap').getBoundingClientRect();
-  const u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height;
-  const bounds=world.bounds;
-  cameraCenter.set(bounds.minX+u*(bounds.maxX-bounds.minX),0,bounds.minZ+v*(bounds.maxZ-bounds.minZ));
-  followSelected=false;cameraUpdate();
-});
-$('pause').onclick=()=>togglePause();$('speed').onclick=()=>{rate=rate===1?2:1;$('speed').textContent=rate+'×'};
-$('sound').onclick=()=>{
-  sound.unlock();const muted=sound.setMuted(!sound.muted);
-  $('sound').textContent=muted?'SON OFF':'♫ SON ON';
-  $('sound').setAttribute('aria-pressed',String(!muted));
-};
-$('newGame').onclick=()=>location.reload();$('restartButton').onclick=()=>location.reload();
-window.addEventListener('keydown',e=>{
-  sound.unlock();
-  if(['1','2','3','4'].includes(e.key))select(Number(e.key)-1);
-  if(e.code==='Space'){e.preventDefault();togglePause()}
-  if(e.key==='Escape'&&paused)togglePause(false);
-  if(e.key.toLowerCase()==='c'){followSelected=false;recenterCamera(true)}
-  if(e.key==='1')switchWeapon('pistol');
-  if(e.key==='2')switchWeapon('carbine');
-});
-renderSquad(true);missionHud();note('SURVIVEZ JUSQU’AU POINT B. RÉCUPÉREZ ARMES, MUNITIONS ET SOINS.',5.5);
-let previous=performance.now(),lastMiniTime=-999;
-function frame(now){
-  requestAnimationFrame(frame);
-  const dt=Math.min(.045,(now-previous)/1000);previous=now;
-  if(!paused&&!ended)tick(dt*rate);
-  cameraUpdate();world.updateVisuals(now/1000);
-  if(now-lastMiniTime>170){drawMiniMap();lastMiniTime=now}
-  renderer.render(scene,camera);
-}
-requestAnimationFrame(frame);
