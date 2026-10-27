@@ -129,7 +129,7 @@ export function createWorld(T,scene){
   // Zones jaunes de stabilité : au sol et sur le bloc central
   const appuiMat=new T.MeshBasicMaterial({color:0xffce59,transparent:true,opacity:.95,depthWrite:false,side:T.DoubleSide});
   const faintMat=new T.MeshBasicMaterial({color:0xe6b94d,transparent:true,opacity:.13,depthWrite:false,side:T.DoubleSide});
-  const spots=[{x:-2.3,z:-1.95,y:platform.height+.19,name:'APPUI SURÉLEVÉ'},{x:-11.1,z:3.4,y:.08,name:'COUVERT OUEST'},{x:10.9,z:6.25,y:.08,name:'COUVERT EST'},{x:-10.1,z:-7.15,y:.08,name:'REPLI SUD'}];
+  const spots=[{x:-2.3,z:-1.95,y:platform.height+.19,name:'APPUI SURÉLEVÉ'},{x:-11.1,z:2.6,y:.08,name:'COUVERT OUEST'},{x:10.9,z:5.3,y:.08,name:'COUVERT EST'},{x:-10.1,z:-6.72,y:.08,name:'REPLI SUD'}];
   for(const s of spots){
     const disk=new T.Mesh(new T.CircleGeometry(.95,48),faintMat);disk.rotation.x=-Math.PI/2;disk.position.set(s.x,s.y+.025,s.z);scene.add(disk);
     const ring=marker(s.x,s.y+.045,s.z,1,appuiMat.clone());s.ring=ring;
