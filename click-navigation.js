@@ -109,6 +109,8 @@ export function createClickNavigation(T,{world,scene,player,camera,canvas,onFire
  }
  let pointerDown=null;
  canvas.addEventListener('pointerdown',e=>{
+  // Alt + clic / bouton central sont réservés à l'orbite de caméra.
+  if(e.button===1||(e.button===0&&e.altKey))return;
   if(e.button!==0&&e.button!==2)return;
   const point=groundAt(e.clientX,e.clientY);
   if(e.button===2){
