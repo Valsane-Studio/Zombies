@@ -330,6 +330,7 @@ canvas.addEventListener('pointerup',e=>{
     if(player){select(player.idx);return}
   }
   const target=world.clickPoint(pickCircle);if(!target)return;
+  if(world.obstruction(target.x,target.z,.35)){note('OBSTACLE : CHOISISSEZ UNE ZONE LIBRE',2);return}
   const p=squad[selected];if(!p?.alive)return;
   const path=world.pathfind(p,target);
   if(path.length){p.path=path;p.path.push({x:target.x,z:target.z});p.destination=target;p.buff=null;renderSquad(true)}
