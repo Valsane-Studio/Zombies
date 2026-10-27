@@ -1,10 +1,10 @@
-/* Valsane Studio — Zone Zéro, prototype 03 : impact, corps et ambiance */
+/* Valsane Studio — Zone Zéro, prototype 04 : traversée tactique */
 import * as T from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
 import {createWorld} from './world.js';
 import {createSoundscape} from './audio.js';
 import {createEffects} from './effects.js';
 const $=id=>document.getElementById(id);
-const scene=new T.Scene();scene.background=new T.Color('#415350');scene.fog=new T.FogExp2('#485c59',.021);
+const scene=new T.Scene();scene.background=new T.Color('#495c58');scene.fog=new T.FogExp2('#516660',.0085);
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
 renderer.outputColorSpace=T.SRGBColorSpace;
@@ -16,7 +16,7 @@ scene.add(new T.HemisphereLight(0xc8dcd8,0x283e3b,1.85));
 const ambient=new T.AmbientLight(0x70888b,.34);scene.add(ambient);
 const sun=new T.DirectionalLight(0xffd7b3,2.65);sun.position.set(-17,30,15);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 sun.shadow.camera.left=-38;sun.shadow.camera.right=38;sun.shadow.camera.top=36;sun.shadow.camera.bottom=-36;sun.shadow.normalBias=.032;scene.add(sun);
-const camera=new T.OrthographicCamera(-27,27,17,-17,.1,190);
+const camera=new T.OrthographicCamera(-27,27,17,-17,.1,440);
 const world=createWorld(T,scene);
 const sound=createSoundscape();
 const fx=createEffects(T,scene,world);
@@ -77,41 +77,47 @@ function createActor(x,z,idx,isZombie=false){
   selection.rotation.x=-Math.PI/2;selection.position.y=.08;group.add(selection);
   // Barre de vie au-dessus de la silhouette
   let hpGroup=null,hpBar=null;
-  if(!isZombie){
-    hpGroup=new T.Group();hpGroup.position.y=2.62;group.add(hpGroup);
-    const back=addMesh(hpGroup,box(.96,.09,.025),basic('#432e2b'));
-    back.castShadow=false;hpBar=addMesh(hpGroup,box(.95,.083,.03),basic('#8ac2a0'),0,0,.03);
-    hpBar.castShadow=false;
+  {
+    hpGroup=new T.Group();hpGroup.position.y=isZombie?2.4:2.62;group.add(hpGroup);
+    const back=addMesh(hpGroup,box(.96,.085,.025),basic('#432e2b'));
+    back.castShadow=false;hpBar=addMesh(hpGroup,box(.95,.077,.03),basic(isZombie?'#b76c5a':'#8ac2a0'),0,0,.03);
+    hpBar.castShadow=false;hpGroup.visible=!isZombie;
   }
   group.position.set(x,world.heightAt(x,z),z);
   return{group,legs,arms,selection,hpBar,hpGroup,torso,head};
 }
-const starts=[[-6.8,-1.2],[-6.5,3.8],[8.6,1.9],[7.6,-5.8]];
+// Mission de traversée : atteindre le point B avec tous les agents encore vivants.
+const start=world.mission.start,extraction=world.mission.exit;
+const starts=[[start.x-2,start.z-.3],[start.x,start.z-1.45],[start.x+2,start.z+.1],[start.x,start.z+1.5]];
 starts.forEach(([x,z],i)=>{
   const actor=createActor(x,z,i);
   actor.selection.material.color.set(i===0?0xe3edbd:0x70aaa0);
-  squad.push({x,z,idx:i,actor,hp:100,maxHp:100,speed:4.1,ammo:12,magazine:12,reload:0,cooldown:Math.random()*.3,path:[],destination:null,alive:true,kills:0,walking:false,buff:null,heading:0,animation:0});
+  squad.push({x,z,idx:i,actor,hp:100,maxHp:100,speed:4.1,ammo:12,magazine:12,reload:0,cooldown:Math.random()*.25,path:[],destination:null,alive:true,kills:0,walking:false,buff:null,heading:0,animation:0});
 });
-let selected=0,credits=0,kills=0,wave=0,spawnRemain=0,spawnTotal=0,spawnCountdown=0,between=2.8;
-let paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=0,initialWave=true;
-function note(message,duration=3.2){const n=$('notice');n.textContent=message;n.classList.add('visible');notifyExpiry=time+duration}
+let selected=0,credits=0,kills=0;
+let paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=-1,activeSectors=new Set();
+let mapUpdated=-1,nearExitMessage=false,followSelected=true;
+function note(message,duration=3.5){const n=$('notice');n.textContent=message;n.classList.add('visible');notifyExpiry=time+duration}
 function isBoosted(p){
   if(!p.alive||p.path.length||p.walking)return null;
-  return world.spots.find(s=>Math.hypot(p.x-s.x,p.z-s.z)<.88&&Math.abs(world.heightAt(p.x,p.z)-s.y)<.37)||null;
+  return world.spots.find(s=>Math.hypot(p.x-s.x,p.z-s.z)<1.04&&Math.abs(world.heightAt(p.x,p.z)-s.y)<.38)||null;
 }
 function combatStats(p){
-  const y=world.heightAt(p.x,p.z),high=y>1.5,boost=!!p.buff,walking=p.walking;
+  const y=world.heightAt(p.x,p.z),high=y>1.4,boost=!!p.buff,walking=p.walking;
   return{accuracy:Math.min(.985,.78+(high?.07:0)+(boost?.15:0)-(walking?.24:0)),
     range:16+(high?4:0),cadence:boost?2.85:2,cover:boost?.42:0};
 }
-function select(i){if(!squad[i]?.alive)return;selected=i;renderSquad(true)}
+function select(i){
+  if(!squad[i]?.alive)return;
+  selected=i;followSelected=true;
+  renderSquad(true);
+}
 function renderSquad(force=false){
-  if(!force&&time-lastHud<.16)return;lastHud=time;
-  const content=squad.map((p,i)=>{
+  if(!force&&time-lastHud<.2)return;lastHud=time;
+  $('squadList').innerHTML=squad.map((p,i)=>{
     const hp=Math.max(0,Math.ceil(p.hp));
     return '<button data-agent="'+i+'" class="agent '+(i===selected?'selected ':'')+(!p.alive?'dead':'')+'"><span class="tag">'+(i+1)+' · '+names[i]+'</span><span class="weapon">PISTOLET / 9 MM</span><span class="hp"><i style="width:'+hp+'%"></i></span><span class="ammo">'+(p.alive?'PV '+hp+' · '+(p.reload>0?'RECHARGE':p.ammo+'/'+p.magazine):'HORS COMBAT')+'</span></button>';
   }).join('');
-  $('squadList').innerHTML=content;
   $('squadList').querySelectorAll('[data-agent]').forEach(el=>el.onclick=()=>select(Number(el.dataset.agent)));
   const p=squad[selected];if(!p)return;
   p.buff=isBoosted(p);const stat=combatStats(p);
@@ -123,32 +129,31 @@ function renderSquad(force=false){
   $('buff').textContent=p.buff?'APPUI ACTIF · +15 % PRÉCISION · +43 % CADENCE':'REJOIGNEZ UN CERCLE JAUNE';
   $('buff').classList.toggle('on',!!p.buff);
 }
-function spawnZombie(){
-  let x,z,attempts=0;
-  do{
-    const side=Math.floor(Math.random()*4);
-    if(side===0){x=-21;z=-14+Math.random()*28}
-    if(side===1){x=21;z=-14+Math.random()*28}
-    if(side===2){x=-20+Math.random()*40;z=-15}
-    if(side===3){x=-20+Math.random()*40;z=15}
-  }while(world.obstruction(x,z,.45)&&attempts++<40);
-  const variant=Math.floor(Math.random()*4);
-  const actor=createActor(x,z,variant,true);
-  const hp=48+wave*10;
-  zombies.push({x,z,actor,hp,maxHp:hp,speed:1.2+Math.random()*.35+wave*.065,path:[],target:-1,think:Math.random()*.9,cd:0,animation:Math.random()*5,heading:0,damage:9+wave*1.6});
+function initializeInfected(){
+  let variant=0;
+  for(let k=0;k<world.mission.infestations.length;k++){
+    const c=world.mission.infestations[k];
+    for(let i=0;i<c.count;i++){
+      const a=(i/c.count)*Math.PI*2+.43*k;
+      const d=2.5+(i%3)*2.1;
+      const p=world.snap(c.x+Math.cos(a)*d,c.z+Math.sin(a)*d);
+      if(!p)continue;
+      const actor=createActor(p.x,p.z,variant++,true);
+      const hp=220+(i%3)*32+(k%2)*25;
+      zombies.push({x:p.x,z:p.z,actor,hp,maxHp:hp,speed:1.10+Math.random()*.3,
+        path:[],target:-1,think:Math.random()*1.8,cd:0,animation:Math.random()*5,
+        heading:0,damage:12+(k%3)*2,walking:false,alert:false,
+        group:k,origin:{x:p.x,z:p.z},bounty:160+Math.floor((hp-200)*.65)});
+    }
+  }
 }
-function startWave(){
-  wave++;
-  sound.startWave();
-  if(wave>5){end(true);return}
-  spawnRemain=5+wave*4;spawnTotal=spawnRemain;spawnCountdown=.4;
-  initialWave=false;
-  note('VAGUE '+wave+' / 5 — '+spawnRemain+' INFECTÉS REPÉRÉS',4);
-}
+initializeInfected();
 function end(success){
   if(ended)return;ended=true;paused=true;
   $('endTitle').textContent=success?'EXTRACTION RÉUSSIE':'ESCOUADE PERDUE';
-  $('endText').textContent=(success?'Les cinq vagues ont été éliminées.':'Tous les membres de votre escouade sont hors combat.')+' '+kills+' infectés éliminés. '+credits.toLocaleString('fr-FR')+' € de crédits de recherche.';
+  const saved=squad.filter(p=>p.alive).length;
+  $('endText').textContent=(success?'Le point B est atteint. '+saved+' survivant'+(saved>1?'s':'')+' évacué'+(saved>1?'s':'')+'.':'Tous vos agents sont hors combat avant l’extraction.')+
+    ' '+kills+' infectés éliminés ; '+credits.toLocaleString('fr-FR')+' € de recherche.';
   $('endOverlay').hidden=false;
 }
 function bloodMark(x,z,y){
@@ -157,8 +162,7 @@ function bloodMark(x,z,y){
   if(corpses.length>100){const old=corpses.shift();scene.remove(old);old.geometry.dispose();old.material.dispose()}
 }
 function tracer(ax,ay,az,bx,by,bz,hit){
-  const points=[new T.Vector3(ax,ay,az),new T.Vector3(bx,by,bz)];
-  const geo=new T.BufferGeometry().setFromPoints(points);
+  const geo=new T.BufferGeometry().setFromPoints([new T.Vector3(ax,ay,az),new T.Vector3(bx,by,bz)]);
   const line=new T.Line(geo,new T.LineBasicMaterial({color:hit?0xffe4a7:0xffba83,transparent:true,opacity:.95,depthWrite:false}));
   scene.add(line);effects.push({mesh:line,life:.105,max:.105});
 }
@@ -168,23 +172,18 @@ function shoot(p,target){
   p.actor.group.rotation.y=Math.atan2(-dx,-dz);
   const chance=Math.max(.2,Math.min(.985,stats.accuracy-Math.max(0,dist-5)*.017));
   const hit=Math.random()<chance;
-  const ax=p.x,az=p.z,ay=world.heightAt(p.x,p.z)+1.38;
-  let bx=target.x,bz=target.z,by=world.heightAt(target.x,target.z)+1.1;
-  sound.shoot();
-  fx.muzzle(p,target);
-  if(!hit){bx+=(Math.random()-.5)*2.6;bz+=(Math.random()-.5)*2.6}
-  tracer(ax,ay,az,bx,by,bz,hit);
+  let bx=target.x,bz=target.z;
+  const ay=world.heightAt(p.x,p.z)+1.38,by=world.heightAt(target.x,target.z)+1.1;
+  sound.shoot();fx.muzzle(p,target);
+  if(!hit){bx+=(Math.random()-.5)*2.7;bz+=(Math.random()-.5)*2.7}
+  tracer(p.x,ay,p.z,bx,by,bz,hit);
   if(hit){
-    // Chaque coup au but déclenche une réaction visuelle et sonore.
-    fx.hit(target);
-    sound.impact();
-    target.hp-=28;
+    fx.hit(target);sound.impact();target.hp-=28;
+    target.actor.hpGroup.visible=true;
     if(target.hp<=0){
       bloodMark(target.x,target.z,world.heightAt(target.x,target.z));
-      // Ne pas retirer immédiatement le modèle : il tombe et reste au sol 7,6 s.
-      fx.kill(target);
-      sound.death();
-      credits+=100+Math.max(0,wave-1)*20;kills++;p.kills++;
+      fx.kill(target);sound.death();
+      credits+=target.bounty;kills++;p.kills++;
     }
   }
 }
@@ -200,8 +199,8 @@ function nearestTarget(p){
 function moveAlong(p,dt){
   p.walking=false;
   if(!p.path.length)return;
-  let node=p.path[0],dx=node.x-p.x,dz=node.z-p.z,d=Math.hypot(dx,dz);
-  if(d<.12){p.path.shift();if(!p.path.length)p.destination=null;return}
+  const node=p.path[0],dx=node.x-p.x,dz=node.z-p.z,d=Math.hypot(dx,dz);
+  if(d<.19){p.path.shift();if(!p.path.length)p.destination=null;return}
   const step=Math.min(d,p.speed*dt);
   p.x+=dx/d*step;p.z+=dz/d*step;
   p.heading=Math.atan2(-dx,-dz);p.walking=true;
@@ -235,68 +234,117 @@ function updateZombies(dt){
   for(let i=zombies.length-1;i>=0;i--){
     const z=zombies[i];
     if(z.hp<=0){zombies.splice(i,1);continue}
-    z.think-=dt;z.cd-=dt;
-    if(z.think<=0){
-      // Aucune stratégie : seulement la personne la plus proche en distance horizontale.
-      let best=Infinity,target=-1;
-      for(let j=0;j<squad.length;j++){const p=squad[j];if(!p.alive)continue;
-        const d=Math.hypot(p.x-z.x,p.z-z.z);if(d<best){best=d;target=j}
-      }
-      z.target=target;
-      if(target>=0){z.path=world.pathfind(z,squad[target]);z.path.push({x:squad[target].x,z:squad[target].z})}
-      z.think=.55+Math.random()*.65;
+    let closest=null,best=Infinity;
+    for(const p of squad)if(p.alive){
+      const distance=Math.hypot(p.x-z.x,p.z-z.z);
+      if(distance<best){best=distance;closest=p}
     }
-    if(z.target>=0&&squad[z.target]?.alive){
-      const p=squad[z.target],d=Math.hypot(p.x-z.x,p.z-z.z);
+    if(!z.alert&&best<25){
+      z.alert=true;z.think=.04;
+      if(!activeSectors.has(z.group)){
+        activeSectors.add(z.group);
+        note('ALERTE · SECTEUR INFESTÉ : '+world.mission.infestations[z.group].name,3.3);
+      }
+    }
+    z.think-=dt;z.cd-=dt;
+    if(z.alert&&closest){
+      if(z.think<=0){
+        // Zombies volontairement stupides : priorité absolue au survivant le plus proche.
+        z.target=closest.idx;
+        z.path=world.pathfind(z,closest);
+        z.think=1.15+Math.random()*.5;
+      }
+      const p=squad[z.target]?.alive?squad[z.target]:closest;
+      const distance=Math.hypot(p.x-z.x,p.z-z.z);
       const diff=Math.abs(world.heightAt(p.x,p.z)-world.heightAt(z.x,z.z));
-      if(d<.86&&diff<.73){
+      if(distance<.92&&diff<.72){
         if(z.cd<=0){
-          const block=p.buff?.42:0;
-          p.hp=Math.max(0,p.hp-z.damage*(1-block));z.cd=1.3;
+          p.hp=Math.max(0,p.hp-z.damage*(1-(p.buff?.42:0)));z.cd=1.4;
           if(p.hp<=0){
             p.alive=false;p.actor.selection.material.color.set(0x645b58);
-            p.actor.group.rotation.z=-.6;note(names[p.idx]+' HORS COMBAT',3.5);
-            if(selected===p.idx){let next=squad.find(q=>q.alive);if(next)selected=next.idx}
+            p.actor.group.rotation.z=-.85;note(names[p.idx]+' HORS COMBAT',3.2);
+            if(selected===p.idx){const next=squad.find(q=>q.alive);if(next)selected=next.idx}
             if(squad.every(q=>!q.alive))end(false);
           }
         }
-      }else{
-        moveAlong(z,dt);
-        if(!z.walking&&d>.85&&z.path.length===0)z.think=.1;
-      }
+      }else moveAlong(z,dt);
     }
     z.actor.group.position.set(z.x,world.heightAt(z.x,z.z),z.z);
     z.actor.group.rotation.y=z.heading;
-    z.animation+=dt*(z.walking?6:2);
-    z.actor.legs[0].rotation.x=Math.sin(z.animation)*.29;
-    z.actor.legs[1].rotation.x=-Math.sin(z.animation)*.27;
-    z.actor.torso.rotation.z=.16+Math.sin(z.animation*.7)*.04;
+    z.animation+=dt*(z.walking?5.5:1.6);
+    z.actor.legs[0].rotation.x=Math.sin(z.animation)*.24;
+    z.actor.legs[1].rotation.x=-Math.sin(z.animation)*.22;
+    z.actor.torso.rotation.z=.16+Math.sin(z.animation*.7)*.03;
+    z.actor.hpGroup.visible=z.alert||z.hp<z.maxHp;
+    z.actor.hpBar.scale.x=Math.max(.02,z.hp/z.maxHp);
+    z.actor.hpBar.position.x=-(1-z.hp/z.maxHp)*.47;
+    z.actor.hpGroup.quaternion.copy(camera.quaternion);
   }
+}
+function checkExtraction(){
+  const alive=squad.filter(p=>p.alive);
+  if(!alive.length)return;
+  const n=alive.filter(p=>Math.hypot(p.x-extraction.x,p.z-extraction.z)<extraction.radius).length;
+  if(n===alive.length){end(true);return}
+  if(n>0&&!nearExitMessage){
+    nearExitMessage=true;note('EXTRACTION : REGROUPEZ TOUS LES AGENTS SURVIVANTS AU POINT B',4.2);
+  }
+  if(!n)nearExitMessage=false;
+}
+function missionHud(){
+  const alive=squad.filter(p=>p.alive);
+  const mean=alive.length?alive.reduce((s,p)=>s+Math.hypot(p.x-extraction.x,p.z-extraction.z),0)/alive.length:0;
+  const original=Math.hypot(start.x-extraction.x,start.z-extraction.z);
+  const progress=Math.max(0,Math.min(1,1-mean/original));
+  $('wave').textContent='POINT B · '+Math.round(mean)+' M';
+  $('waveState').textContent=alive.filter(p=>Math.hypot(p.x-extraction.x,p.z-extraction.z)<extraction.radius).length+'/'+alive.length+' AU POINT B';
+  $('infected').textContent=String(zombies.length).padStart(2,'0');
+  $('kills').textContent=String(kills).padStart(2,'0');
+  $('money').textContent=credits.toLocaleString('fr-FR')+' €';
+  $('progress').style.width=Math.round(progress*100)+'%';
+  $('progressText').textContent=Math.round(progress*100)+' % DU TRAJET';
 }
 function tick(dt){
   time+=dt;
-  if(wave===0){between-=dt;if(between<=0)startWave()}
-  else if(spawnRemain>0){
-    spawnCountdown-=dt;
-    if(spawnCountdown<=0){spawnZombie();spawnRemain--;spawnCountdown=.52+Math.random()*.52}
-  }else if(zombies.length===0){
-    between-=dt;
-    if(between<=0){between=4;startWave()}
-  }
-  updateActors(dt);updateZombies(dt);
-  fx.update(dt);
+  updateActors(dt);updateZombies(dt);fx.update(dt);
+  checkExtraction();
   for(let i=effects.length-1;i>=0;i--){
     const e=effects[i];e.life-=dt;e.mesh.material.opacity=Math.max(0,e.life/e.max);
     if(e.life<=0){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose();effects.splice(i,1)}
   }
   if(notifyExpiry<time)$('notice').classList.remove('visible');
-  $('wave').textContent='VAGUE '+String(Math.max(wave,1)).padStart(2,'0')+' / 05';
-  $('waveState').textContent=spawnRemain>0?'SIGNATURES EN APPROCHE':zombies.length?'COMBAT EN COURS':'RECONFIGURATION';
-  $('infected').textContent=String(zombies.length+spawnRemain).padStart(2,'0');
-  $('kills').textContent=String(kills).padStart(2,'0');
-  $('money').textContent=credits.toLocaleString('fr-FR')+' €';
-  $('progress').style.width=wave?((spawnTotal-spawnRemain)/Math.max(1,spawnTotal)*100)+'%':'0%';
-  renderSquad();
+  if(time-lastHud>.2){missionHud();renderSquad();}
+}
+function drawMiniMap(){
+  const canvas=$('minimap'),g=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+  const bounds=world.bounds,sx=w/(bounds.maxX-bounds.minX),sy=h/(bounds.maxZ-bounds.minZ);
+  const tx=x=>(x-bounds.minX)*sx,tz=z=>(z-bounds.minZ)*sy;
+  g.fillStyle='#23302e';g.fillRect(0,0,w,h);
+  g.fillStyle='#52615b';
+  for(const x of world.roadX)g.fillRect(tx(x-4.6),0,9.2*sx,h);
+  for(const z of world.roadZ)g.fillRect(0,tz(z-4.6),w,9.2*sy);
+  g.fillStyle='#121c1e';
+  for(const b of world.footprints)g.fillRect(tx(b.x-b.w/2),tz(b.z-b.d/2),b.w*sx,b.d*sy);
+  g.fillStyle='#9c705d';
+  for(const b of world.roadblocks)g.fillRect(tx(b.x-b.w/2),tz(b.z-b.d/2),Math.max(2,b.w*sx),Math.max(2,b.d*sy));
+  for(const c of world.mission.infestations){
+    g.beginPath();g.arc(tx(c.x),tz(c.z),c.radius*sx,0,Math.PI*2);
+    g.fillStyle='#b8575440';g.fill();g.strokeStyle='#d0756468';g.lineWidth=.8;g.stroke();
+  }
+  for(const s of world.spots){g.beginPath();g.arc(tx(s.x),tz(s.z),3,0,Math.PI*2);g.fillStyle='#f1cc67';g.fill()}
+  for(const z of zombies){g.beginPath();g.arc(tx(z.x),tz(z.z),z.alert?2.3:1.5,0,Math.PI*2);g.fillStyle=z.alert?'#f4a19b':'#a96663';g.fill()}
+  g.beginPath();g.arc(tx(start.x),tz(start.z),3,0,Math.PI*2);g.fillStyle='#dbece0';g.fill();
+  g.beginPath();g.arc(tx(extraction.x),tz(extraction.z),5,0,Math.PI*2);g.strokeStyle='#8ce5ba';g.lineWidth=2;g.stroke();
+  g.fillStyle='#9ee4c8';g.font='bold 10px sans-serif';g.fillText('B',tx(extraction.x)-3,tz(extraction.z)+3);
+  for(const p of squad)if(p.alive){
+    g.beginPath();g.arc(tx(p.x),tz(p.z),p.idx===selected?4.3:3.1,0,Math.PI*2);
+    g.fillStyle=p.idx===selected?'#fcf0bf':'#83c5d9';g.fill();
+    if(p.idx===selected){g.strokeStyle='#fff';g.lineWidth=1.3;g.stroke()}
+  }
+  // Centre de vue, pour faciliter la traversée de la grande carte.
+  g.strokeStyle='#d9eee385';g.lineWidth=1;g.beginPath();
+  g.moveTo(tx(cameraCenter.x)-5,tz(cameraCenter.z));g.lineTo(tx(cameraCenter.x)+5,tz(cameraCenter.z));
+  g.moveTo(tx(cameraCenter.x),tz(cameraCenter.z)-5);g.lineTo(tx(cameraCenter.x),tz(cameraCenter.z)+5);g.stroke();
 }
 // Caméra orbitale tactique : glisser pour tourner ; Maj/secondaire pour déplacer ; molette zoom.
 let azimuth=-.74,zoom=1,cameraCenter=new T.Vector3(0,0,0);
