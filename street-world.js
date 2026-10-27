@@ -1,4 +1,5 @@
 import {addOvergrowth} from './overgrowth.js';
+import {createVisitBuilding} from './visit-building.js';
 /* ZONE ZÉRO · Rue abandonnée — décor physique et matériaux.
    Étude visuelle : aucun système de zombies, d'inventaire ou de farming. */
 export function buildStreet(T, scene) {
@@ -219,7 +220,8 @@ export function buildStreet(T, scene) {
     {x:43,side:1,w:22,depth:13,h:12,name:'GARAGE',finish:2,ruin:false},
     {x:65,side:1,w:20,depth:14,h:14,name:'HABITATIONS',finish:1,ruin:false}
   ];
-  for(const s of specs)building(s);
+  for(const s of specs)if(s.name!=='CAFÉ NORD')building(s);
+  const visitBuilding=createVisitBuilding(T,scene);
   // Entrées de cour et angles où la nature a gagné du terrain.
   for(const x of [-4,0,5]) {
     box(x,-.05,-32,1.3,.10,12,M.charcoal,scene,false);
@@ -358,14 +360,17 @@ export function buildStreet(T, scene) {
     return group;
   }
   for(const [x,z,h] of [[-46,17.4,5.5],[-18,-17.1,6],[12,18.4,4.5],[46,-18.4,5.8],[67,19,5.5]])smallTree(x,z,h);
-  // La rue est la seule zone de jeu pour cette étude.
-  function collides(x,z,r=.47){
-    if(x<-73||x>73||z<-21.3||z>21.3)return true;
+  // Les rues restent au rez-de-chaussée, mais une cour et un immeuble deviennent visitables.
+  function collides(x,z,r=.47,level=visitBuilding.level){
+    if(level>0)return visitBuilding.collides(x,z,r,level);
+    if(x<-73||x>73||z<-44||z>21.3)return true;
     for(const c of colliders){
       const nearX=Math.max(c.minX,Math.min(x,c.maxX)),nearZ=Math.max(c.minZ,Math.min(z,c.maxZ));
       if((nearX-x)**2+(nearZ-z)**2<r*r)return true;
-    }return false;
+    }
+    return visitBuilding.collides(x,z,r,0);
   }
-  const plants=addOvergrowth(T,scene,{collides,buildings:specs});
-  return {collides,colliders,materials:M,models,plants};
+  const plants=addOvergrowth(T,scene,{collides,buildings:specs.filter(s=>s.name!=='CAFÉ NORD')});
+  return {collides,colliders,materials:M,models,plants,building:visitBuilding};
+
 }
