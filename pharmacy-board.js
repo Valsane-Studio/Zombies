@@ -201,6 +201,13 @@ export function makePainter(canvas){
   for(const d of E.DOORS)drawDoor(d,s.doors[d.id]);
   if(!s.player.medicine)badge(E.MED.x,E.MED.y,'✚','MÉDICAMENTS','#e2d7aa');
   else badge(E.MED.x,E.MED.y,'✓','RÉCUPÉRÉS','#a6c9a4');
+  if(s.alarm.active>0){
+    const at=center(E.ALARM.x,E.ALARM.y);
+    circle(ctx,at.x,at.y,11*C,'#b7814630');
+    ctx.strokeStyle='#e7b875a6';ctx.lineWidth=2;ctx.setLineDash([10,9]);ctx.beginPath();
+    ctx.arc(at.x,at.y,11*C,0,TAU);ctx.stroke();ctx.setLineDash([]);
+    labelChip(ctx,'SIRÈNE · '+s.alarm.active+' TOUR'+(s.alarm.active>1?'S':''),at.x,at.y+41,'#72573c','#f7d7a6',10);
+  }
   if(hover&&s.status==='playing'){
    const p=center(hover.x,hover.y);
    ctx.strokeStyle='#fff3c9c9';ctx.lineWidth=2;ctx.setLineDash([6,3]);
@@ -238,6 +245,14 @@ export function makePainter(canvas){
    if(np.hp<old.hp){
     labelChip(ctx,'−'+(old.hp-np.hp)+' SANTÉ',center(np.x,np.y).x,center(np.x,np.y).y-38,'#9f4d44','#fff2db',11);
    }
+  }
+  // Les infectés neutralisés restent dessinés comme des pions couchés sur le plan.
+  for(const z of s.zombies)if(z.hp<=0){
+    const at=center(z.x,z.y);
+    ctx.save();ctx.translate(at.x,at.y);ctx.rotate(-.45);ctx.globalAlpha=.6;
+    circle(ctx,0,0,12,'#6d514a');ctx.strokeStyle='#d7a694';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-8,-8);ctx.lineTo(8,8);ctx.moveTo(8,-8);ctx.lineTo(-8,8);ctx.stroke();
+    ctx.restore();
   }
   // Pions du tour présent avec interpolation légère après confirmation.
   for(let i=0;i<s.zombies.length;i++){
