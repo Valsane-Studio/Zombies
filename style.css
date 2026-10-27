@@ -49,3 +49,33 @@ h1,h2,p{margin:0}.identity h1{font-size:28px;line-height:1.1;font-weight:850;let
 /* Un seul survivant : une fiche occupant tout le panneau */
 .squad-list{grid-template-columns:minmax(0,1fr)}
 .squad{width:min(310px,100%)}
+
+/* Prototype 07 — tableau de survie */
+.map-title,.section-status,.tools-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.threat-label{font-size:9px;font-weight:850;letter-spacing:1px;border:1px solid #749b82;color:#c0e6c8;padding:4px 6px;border-radius:3px}
+.threat-label[data-level="SUSPECT"],.threat-label[data-level="TRAQUÉ"]{border-color:#b9a270;color:#edc991}
+.threat-label[data-level="CRITIQUE"]{border-color:#b8756b;color:#ffae9c}
+.survival-tools{position:absolute;z-index:3;bottom:156px;left:23px;width:min(770px,calc(100% - 46px));padding:12px;pointer-events:auto}
+.tools-head{padding-bottom:9px;border-bottom:1px solid #55736975}
+.tools-head>span:last-child{font-size:9px;color:#d3ba81;text-align:right;font-weight:700;max-width:380px}
+.tool-row{display:flex;gap:14px;margin-top:9px}
+.tool-group{display:flex;align-items:center;gap:5px;flex:1}
+.tool-label{color:#97b2a6;font-size:8px;letter-spacing:.6px;font-weight:800;width:39px}
+.tool-row button{padding:9px 7px;font-size:9px;white-space:nowrap;font-weight:850;border-color:#58746c;background:#233638}
+.tool-row button.active{background:#5a8070;color:#fff;border-color:#a6c7b4}
+.tool-row button:disabled{opacity:.28;cursor:not-allowed}
+.tool-row.secondary{gap:6px}.tool-row.secondary button{flex:1}
+.action-progress{height:3px;background:#40524c;margin-top:9px}
+.action-progress i{display:block;width:0;height:100%;background:#e7bd72}
+.survivor-card{padding:12px 15px;width:455px;min-width:0}
+.section-status{margin-bottom:10px}.section-status>span:last-child{font-size:9px;color:#c5c4a2}
+.resource-row{display:grid;grid-template-columns:76px minmax(65px,1fr) 68px;align-items:center;gap:10px;font-size:9px;letter-spacing:.4px;color:#a8c1b4;margin:6px 0}
+.resource-row strong{text-align:right;color:#f0f1e7;font-variant-numeric:tabular-nums}
+.resource-track{height:6px;border-radius:8px;background:#3c4b43;overflow:hidden}
+.resource-track i{display:block;height:100%;width:100%;border-radius:8px}
+.resource-track .health{background:#a1d09c}.resource-track .stamina{background:#d6b975}
+.resource-footer{display:flex;justify-content:space-between;gap:7px;border-top:1px solid #526a5d88;margin-top:10px;padding-top:8px;font-size:10px;color:#e0d3a5}
+.resource-footer span{white-space:nowrap}
+@media(max-width:1000px){.survival-tools{left:10px;bottom:158px;width:min(670px,calc(100% - 20px))}.survivor-card{width:380px}.tool-row{gap:5px}.tool-row button{font-size:8px;padding:7px 5px}}
+@media(max-width:850px){.briefing,.position{display:none}.tool-label{display:none}.tool-group{justify-content:space-between}}
+@media(max-width:650px){.survival-tools{left:8px;right:8px;width:auto;bottom:184px;padding:8px}.tool-row{flex-direction:column;gap:5px}.tool-row.secondary{flex-direction:row;flex-wrap:wrap}.tool-row.secondary button{flex:1;min-width:30%}.survivor-card{width:100%}.bottom{bottom:7px}.tools-head>span:last-child{font-size:7px}}
