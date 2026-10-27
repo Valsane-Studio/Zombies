@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101719">
+  <meta name="description" content="ZONE ZÉRO — jeu de tactique d'escouade zombie en 3D, par Valsane Studio.">
+  <title>ZONE ZÉRO — Valsane Studio</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main id="game" aria-label="Jeu tactique en trois dimensions"></main>
+  <div class="vignette" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="identity panel">
+      <span class="eyebrow"><span class="status-dot"></span> VALSANE STUDIO <span class="slash">/</span> PROTOTYPE 02</span>
+      <h1>ZONE <span>ZÉRO</span></h1>
+      <p>ESCAOUADE ALPHA <span class="slash">/</span> SECTEUR INDUSTRIEL 07</p>
+    </div>
+    <div class="mission panel">
+      <span class="eyebrow">MISSION 01 <span class="slash">/</span> EXTRACTION</span>
+      <div class="mission-line"><strong id="wave">VAGUE 01 / 05</strong><span id="waveState">CONTACT IMMINENT</span></div>
+      <div class="progress"><i id="progress"></i></div>
+      <div class="mission-data"><span>INFECTÉS <b id="infected">00</b></span><span>ÉLIMINÉS <b id="kills">00</b></span><span>RECHERCHE <b id="money">0 €</b></span></div>
+    </div>
+  </header>
+  <aside class="left">
+    <div class="panel briefing">
+      <span class="eyebrow">TACTIQUE <span class="slash">/</span> MOUVEMENT</span>
+      <p>Cliquez sur un agent, puis sur le terrain pour le déplacer. Tous les tirs sont automatiques.</p>
+      <p>La <b>rampe est</b> permet d'accéder au toit central. Les <b>cercles jaunes</b> sont des positions d'appui : précision et cadence améliorées.</p>
+      <div class="keyline"><span>1–4</span> AGENT <span>ESPACE</span> PAUSE</div>
+    </div>
+    <div class="panel position">
+      <span class="eyebrow">POSITION <span class="slash">/</span> <span id="currentAgent">ALPHA</span></span>
+      <div class="place" id="place">EN DÉPLACEMENT LIBRE</div>
+      <div class="position-stats">
+        <div><span>PRÉCISION</span><strong id="accuracy">78 %</strong></div>
+        <div><span>CADENCE</span><strong id="firerate">2.0 /s</strong></div>
+        <div><span>PORTÉE</span><strong id="range">16 m</strong></div>
+      </div>
+      <div id="buff" class="buff">REPÉREZ LES ZONES JAUNES</div>
+    </div>
+  </aside>
+  <div id="notice" class="notice panel" role="status" aria-live="polite"></div>
+  <div class="bottom">
+    <section class="squad panel" aria-label="Sélection des agents">
+      <span class="eyebrow">ESCOUADE <span class="slash">/</span> 04 OPÉRATEURS</span>
+      <div id="squadList" class="squad-list"></div>
+    </section>
+    <div class="actions panel">
+      <button id="pause" class="active" title="Pause tactique (espace)">Ⅱ PAUSE</button>
+      <button id="speed" title="Vitesse de simulation">1×</button>
+      <button id="newGame" title="Recommencer">↺</button>
+    </div>
+  </div>
+  <div class="overlay" id="endOverlay" hidden>
+    <div class="end-card panel">
+      <span class="eyebrow">VALSANE STUDIO / RAPPORT DE MISSION</span>
+      <h2 id="endTitle"></h2>
+      <p id="endText"></p>
+      <button id="restartButton">RECOMMENCER LA MISSION</button>
+    </div>
+  </div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
