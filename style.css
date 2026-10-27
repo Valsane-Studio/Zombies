@@ -45,3 +45,7 @@ h1,h2,p{margin:0}.identity h1{font-size:28px;line-height:1.1;font-weight:850;let
 #game canvas:active{cursor:grabbing}
 
 .survival-inventory{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:10px;color:#d6c997;margin:7px 0 1px}.survival-inventory span{font-variant-numeric:tabular-nums}
+
+/* Un seul survivant : une fiche occupant tout le panneau */
+.squad-list{grid-template-columns:minmax(0,1fr)}
+.squad{width:min(310px,100%)}
