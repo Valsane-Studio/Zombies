@@ -1,41 +1,47 @@
 # ZONE ZÉRO — Valsane Studio
 
-Prototype 03 de jeu de tactique d'escouade en 3D (Three.js), jouable dans un navigateur moderne.
+## Prototype 04 — Traversée urbaine
 
-## Lancer le jeu
+Démo jouable dans un navigateur (Three.js) d'un **jeu tactique d'escouade**, sans vague ni bâtiment à défendre.
 
-Ouvrir le site GitHub Pages du dépôt. Aucun compte ni installation ne sont nécessaires.
+### Mission
 
-- **1 à 4** : sélectionner un survivant
-- **Clic sur le sol** : donner un ordre de déplacement
-- **Glisser** : faire pivoter la caméra
-- **Maj + glisser** ou **clic droit + glisser** : déplacer la caméra
-- **Molette** : zoom
-- **Espace** : pause tactique
-- **♫ SON ON / SON OFF** : activer ou couper le son ; le son démarre après la première interaction, selon les règles du navigateur
-- Boutons de l'interface : pause, vitesse ×2 et recommencer
+**Faire rejoindre le point B (extraction) aux quatre survivants, depuis le point A.** Il suffit que tous les agents **encore vivants** soient à l'intérieur du cercle vert de sortie pour terminer la mission. La priorité est de préserver l'équipe, pas d'exterminer toute la ville.
 
-## Règles du prototype
+- Une carte urbaine d'environ **185 × 130 mètres**, avec de grands pâtés de maisons, ruelles, rues et carrefours.
+- Des **routes bouchées** par des barrages, voitures ou débris, qui imposent des détours calculés par l'algorithme A*.
+- **21 zombies**, répartis dans **six secteurs infestés** (cercles rouges sur la carte) : moins nombreux que dans la première démo, mais beaucoup plus résistants (**220 à 309 PV** au lieu de 48 à 100 environ).
+- Les zombies détectent le joueur quand il s'approche (environ 25 m). Ensuite, ils poursuivent toujours **le survivant le plus proche**, sans réaction tactique aux tirs et sans apparition de vagues.
+- **Deux plateformes surélevées accessibles par rampe**, plusieurs postes de tir marqués par des **cercles jaunes**, offrant stabilité, cadence, précision et une protection partielle.
+- Une **mini-carte interactive** pour explorer le quartier, repérer les obstacles, les concentrations d'infectés et le point B.
+- Les quatre agents ont chacun un pistolet, des tirs automatiques et des munitions rechargeables automatiquement ; aucun ordre de tir manuel.
+- Les impacts visuels, bruits de pistolet et corps temporaires de la version 03 sont conservés.
+- Les éliminations rapportent des crédits de recherche, mais ces crédits ne servent pas encore à améliorer l'équipe.
 
-- Quatre agents avec des pistolets 9 mm, tirs et rechargements automatiques.
-- Les zombies visent uniquement le survivant le plus proche en distance horizontale.
-- Les agents peuvent bouger pendant les vagues.
-- Le bloc central est accessible par la rampe à l'est.
-- Les **cercles jaunes** sont les zones de tir stables : **+15 points de précision de référence**, cadence passant de 2 à 2,85 tirs/seconde et dégâts de contact réduits de 42 %. Bonus actifs si l'agent est arrêté dans le cercle.
-- En hauteur : +4 mètres de portée et +7 points de précision de référence.
-- Chaque coup de feu génère un son court, un flash à la bouche du pistolet et une traînée de projectile.
-- **Chaque balle qui touche** provoque un impact visible (petite projection, marque sur le zombie, réaction du buste) et un bruit mat.
-- Les zombies abattus **tombent au sol, restent 7,6 secondes, puis s'estompent**. Une trace reste sur le sol.
-- Atmosphère renforcée : voile de fumée, poussière flottante, éclairages et fond sonore industriel.
-- Chaque zombie éliminé rapporte des crédits de recherche.
-- La mission dure cinq vagues ; aucune installation n'est à défendre.
+### Contrôles
 
-Le système de combat et les statistiques sont une base de réglage, et non une simulation balistique réelle. Les sons sont synthétisés par Web Audio ; aucun fichier audio externe n'est chargé. Le modèle 3D est semi-réaliste procédural (sans assets externes) et doit encore être enrichi.
+- **Clic sur un agent** ou **1 à 4** : sélectionner un survivant.
+- **Clic sur le terrain** : définir une destination. L'agent recherche un itinéraire praticable ; on peut donner de nouveaux ordres en cours de déplacement.
+- **Glisser** : rotation de la caméra.
+- **Maj + glisser** ou **clic droit + glisser** : déplacer manuellement la caméra.
+- **Molette** : zoom.
+- **C** ou **◎ SUIVRE** : recentrer et suivre l'agent sélectionné.
+- **Clic sur la mini-carte** : déplacer la caméra vers ce quartier, sans ordonner de déplacement aux agents.
+- **Espace** : pause tactique.
+- **1× / 2×** : vitesse du jeu.
+- **♫ SON ON/OFF** : couper ou rétablir le son. L'audio s'active seulement après interaction avec la page.
 
-## Technique
+### Implantation technique
 
-Les fichiers principaux sont : \`index.html\`, \`style.css\`, \`world.js\`, \`game.js\`. Le navigateur charge Three.js depuis jsDelivr ; il faut donc une connexion Internet.
+- \`index.html\` : interface du jeu et mini-carte.
+- \`style.css\` : habillage des panneaux et contrôles.
+- \`game.js\` : agents, zombies, tirs automatiques, extraction, commandes et HUD.
+- \`world.js\` : quartiers, immeubles, plateformes, routes bloquées, zones d'appui et objectifs.
+- \`navigation.js\` : navigation A* optimisée, collisions et rampes.
+- \`audio.js\`, \`effects.js\` : sons et effets des combats.
 
-Publication automatique via GitHub Actions / GitHub Pages, si GitHub Pages et Actions sont autorisés dans les paramètres du dépôt.
+La 3D est générée procéduralement et les fenêtres sont instanciées pour limiter les appels de rendu. Le jeu charge Three.js depuis jsDelivr ; une connexion Internet est nécessaire.
 
-© Valsane Studio — prototype en cours de conception.
+Le prototype n'a pas encore de sauvegarde, de boutique, d'inventaire ni de missions multiples. Les dimensions, statistiques et temps de jeu pourront être rééquilibrés après test.
+
+© Valsane Studio.
