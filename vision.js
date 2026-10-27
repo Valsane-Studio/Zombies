@@ -70,5 +70,12 @@ export function createVision(T,scene,world){
     let count=0;for(let i=0;i<explored.length;i+=16)if(explored[i])count++;
     return Math.round(count/Math.ceil(explored.length/16)*100);
   }
-  return {update,canSee,discovered,hasLineOfSight,explorationPercent};
+  function align(camera,target){
+    const eyeHeight=camera.position.y-target.y;
+    if(eyeHeight<=.01)return;
+    const h=overlay.position.y;
+    overlay.position.x=(minX+maxX)/2+(camera.position.x-target.x)*h/eyeHeight;
+    overlay.position.z=(minZ+maxZ)/2+(camera.position.z-target.z)*h/eyeHeight;
+  }
+  return {update,canSee,discovered,hasLineOfSight,explorationPercent,align};
 }
