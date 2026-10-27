@@ -49,14 +49,14 @@ export function createLoot(T,scene,world){
   function nearest(p,range=2.25){
     let result=null,best=range;
     for(const item of items){
-      if(item.found)continue;
+      if(item.found||!world.visible(p,item))continue;
       const d=Math.hypot(item.x-p.x,item.z-p.z);
       if(d<best){best=d;result=item}
     }
     return result;
   }
   function collect(p,item){
-    if(!item||item.found||Math.hypot(item.x-p.x,item.z-p.z)>2.3)return null;
+    if(!item||item.found||Math.hypot(item.x-p.x,item.z-p.z)>2.3||!world.visible(p,item))return null;
     item.found=true;scene.remove(item.group);
     if(item.type==='medkit'){p.medkits=Math.min(4,p.medkits+item.amount)}
     if(item.type==='decoy'){p.decoys=Math.min(6,p.decoys+item.amount)}
