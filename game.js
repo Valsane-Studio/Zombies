@@ -461,7 +461,7 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('pointerdown',e=>{
   if(e.button!==0&&e.button!==2)return;
   const box=canvas.getBoundingClientRect();
-  const mode=(e.shiftKey&&e.button===0)?'lasso':'pan';
+  const mode='pan'; // Zombies se joue seul : glisser sert toujours à explorer la carte.
   down={pointerId:e.pointerId,x:e.clientX,y:e.clientY,center:cameraCenter.clone(),mode,button:e.button,moved:false};
   if(mode==='lasso'){
     followSelected=false;
