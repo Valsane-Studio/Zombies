@@ -121,7 +121,7 @@ function showPreview(cell){
  hoverMarker.visible=true;hoverMarker.position.set(point.x,.32,point.z);
  hoverMarker.material.color.set(result.valid?0xd4eac7:0xde9a88);
  if(result.valid){
-  const destination=toWorld(result.end.x,result.end.z);
+  const destination=toWorld((result.kind==='shoot'?state.player:result.end).x,(result.kind==='shoot'?state.player:result.end).z);
   noiseDisk.visible=noiseRing.visible=true;
   noiseDisk.position.set(destination.x,.27,destination.z);
   noiseRing.position.set(destination.x,.28,destination.z);
@@ -147,10 +147,22 @@ function flashAt(point,radius){
  soundFlash.visible=true;soundFlash.material.opacity=.75;
  effects.push({type:'sound',life:.55});
 }
+function shotTracer(target){
+ const a=toWorld(state.player.x,state.player.z),b=toWorld(target.x,target.z);
+ const geometry=new T.BufferGeometry().setFromPoints([
+   new T.Vector3(a.x,1.28,a.z),new T.Vector3(b.x,1.42,b.z)
+ ]);
+ const material=new T.LineBasicMaterial({color:0xffdba2,transparent:true,opacity:.95,depthWrite:false});
+ const line=new T.Line(geometry,material);scene.add(line);effects.push({type:'tracer',mesh:line,life:.17,max:.17});
+ const flash=new T.Sprite(new T.SpriteMaterial({color:0xffd18d,transparent:true,opacity:.82,depthWrite:false}));
+ flash.position.set(a.x,1.3,a.z);flash.scale.set(.85,.85,1);scene.add(flash);
+ effects.push({type:'flash',mesh:flash,life:.15,max:.15});
+}
 function updateGame(action){
  if(busy||state.phase!=='playing')return;
  unlockSound();if(audio.context?.state==='suspended')audio.context.resume().catch(()=>{});
  const success=act(state,action);
+ if(success&&action.type==='shoot')shotTracer(action.target);
  if(!success){announce(state.events.at(-1)?.text||'Action impossible','warning');showPreview(hoverCell);return}
  busy=true;
  for(const event of state.events)playEvent(event);
@@ -270,6 +282,9 @@ function animate(now){
    if(eff.type==='sound'){
      soundFlash.material.opacity=Math.max(0,eff.life/.55)*.73;
      if(eff.life<=0){soundFlash.visible=false;effects.splice(i,1)}
+   }else if(eff.mesh){
+     eff.mesh.material.opacity=Math.max(0,eff.life/eff.max)*.95;
+     if(eff.life<=0){scene.remove(eff.mesh);eff.mesh.geometry?.dispose();eff.mesh.material.dispose();effects.splice(i,1)}
    }
  }
  renderer.render(scene,camera);
