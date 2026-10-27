@@ -41,7 +41,7 @@ export const ZOMBIE_STARTS=[
  {x:19,z:9,patrol:[{x:19,z:9},{x:19,z:10},{x:20,z:10}]},
  {x:23,z:12,patrol:[{x:23,z:12},{x:23,z:13},{x:22,z:13}]},
  {x:10,z:16,patrol:[{x:10,z:16},{x:11,z:16},{x:11,z:15}]},
- {x:22,z:6,patrol:[{x:22,z:6},{x:23,z:6},{x:23,z:7}]},
+ {x:22,z:7,patrol:[{x:22,z:7},{x:23,z:7},{x:24,z:7}]},
  {x:27,z:11,patrol:[{x:27,z:11},{x:28,z:11},{x:28,z:10}]}
 ];
 export const key=(x,z)=>z*W+x;
