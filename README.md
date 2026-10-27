@@ -1,56 +1,52 @@
-# ZONE ZÉRO — La Pharmacie
+# ZONE ZÉRO — Rue abandonnée
 
-Un petit jeu de **stratégie de survie au tour par tour**, imaginé et développé pour Valsane Studio. Ici, les zombies ne sont pas des cibles à éliminer : ce sont surtout des **pions dont le déplacement peut être influencé**.
+## Étude visuelle 01 · 27 octobre 2026
 
-La direction graphique assume l'apparence d'un **plateau de jeu tactique illustré**, et non celle d'une simulation 3D photoréaliste.
+Cette version **repart de zéro** : une petite démonstration **3D jouable en temps réel**, avec un survivant et son pistolet dans une rue post-apocalyptique. **Aucun zombie, aucun farming, aucune récolte, aucun système de mission ou de progression.** Le but est de valider le rendu, l'ambiance et la sensation des déplacements avant de construire un vrai jeu d'exploration.
 
-## Mission
+**Ouvrir :** https://valsane-studio.github.io/Zombies/
 
-Depuis le point de départ sur la gauche du quartier :
+### Contrôles
 
-1. Entrer dans la **pharmacie** par l'une de ses portes.
-2. Récupérer les **médicaments** au centre du bâtiment.
-3. Revenir au **point d'extraction** vivant.
+- **ZQSD / WASD** : déplacer le survivant librement, par rapport à la caméra.
+- **Maj** : courir.
+- **Souris** : regarder / orienter le personnage, qui tient un pistolet.
+- **Clic gauche** : tirer dans le décor (aucun ennemi et aucun système de dégâts).
+- **R** : recharger le pistolet de démonstration (munitions d'essai renouvelables).
+- **Flèches gauche / droite** : tourner la caméra autour de la scène.
+- **Flèches haut / bas** : modifier l'angle de plongée.
+- **Molette** : zoom.
+- **C** : recentrer la vue.
+- **H** : masquer / réafficher l'interface pour examiner le rendu.
+- **Écran tactile** : joystick et bouton de tir élémentaires (à perfectionner).
 
-Le jeu se joue sur un plateau unique de **24 × 16 cases**, avec dix infectés initialement présents. Chaque action du joueur est suivie d'un tour de déplacement des zombies.
+### Direction visuelle
 
-## Ce qui rend le niveau stratégique
+- **Vraie caméra perspective**, placée au-dessus et derrière le survivant, avec déplacement fluide et ombres.
+- Rue de **145 mètres environ** bordée de bâtiments à plusieurs étages, commerces clos, fenêtres, corniches, tuyaux, enseignes, toits abîmés et petites ruelles.
+- Voitures abandonnées, bennes, vitrines barricadées, lampadaires, gravats, végétation qui repousse, flaques d'eau et détails routiers.
+- Matériaux **PBR** avec textures de chaussée et de trottoir de **Poly Haven** (CC0), chargées en ligne si disponibles. Secours sous forme de textures générées localement en Canvas, pour éviter un décor complètement vide si une ressource n'arrive pas.
+- Personnage animé **Soldier.glb** issu des exemples publics de Three.js, chargé si disponible ; personnage entièrement généré en 3D comme solution de secours.
+- Éclairage directionnel avec ombres, brouillard atmosphérique, teintes délavées et légère ambiance de fin de journée.
 
-- **Trois portes / passages** : l'entrée principale, la grille arrière et le portillon nord. Chacun doit être ouvert à proximité. Une porte modifie les passages disponibles pour le survivant **et pour les zombies**.
-- **Alarme de voiture à distance** : un boîtier près du départ déclenche une sirène à l'est pour huit tours ; les zombies qui l'entendent convergent vers elle. À utiliser au bon moment.
-- **Bouteilles** : deux au départ. Lancer à six cases au maximum produit un bruit entendu dans un rayon de huit cases.
-- **Allures** : discrétion, marche, sprint. La course dépense de l'endurance et n'est efficace qu'en ligne droite ; attendre permet de reprendre son souffle.
-- **Combats coûteux** : trois balles au départ, deux en réserve. Un zombie résiste à un tir, sauf s'il est déjà blessé. Une détonation attire les infectés sur un rayon de treize cases.
-- **Hordes et goulets** : deux zombies ne peuvent pas occuper la même case. Les rues étroites et les portes peuvent créer des embouteillages.
-- **Anticipation** : le plateau dessine le déplacement prévu du survivant, le cercle du bruit et des flèches vers **les positions estimées des zombies au tour suivant**. La simulation utilise les mêmes règles que l'exécution : ce que l'on prévoit est ce qui se produit.
-- **Plusieurs chemins possibles** : les tests du moteur ont validé une traversée via l'alarme et l'entrée principale, et une autre via la grille arrière avec diversion sur le chemin du retour.
+### Fichiers actifs
 
-L'objectif est de gagner en ayant tiré le moins possible, et d'avoir envie de recommencer pour trouver une autre solution.
+- \`index.html\` : scène et commandes simplifiées.
+- \`street.css\` : interface visuelle.
+- \`street-demo.js\` : caméra, déplacements WASD, collisions, personnage, chargement glTF, tir, animations.
+- \`street-world.js\` : bâtiments, route, matériaux, véhicules, accessoires, colliders.
 
-## Commandes
+Les anciens prototypes sont **conservés dans le dépôt**, sans être chargés par cette version de la page d'accueil.
 
-- **Choisir une allure** : Se faufiler (2 cases, aucun bruit), Marcher (3 cases, bruit 2), Courir (5 cases en ligne droite, bruit 6).
-- **Choisir un outil** : Déplacer, Bouteille ou Tirer.
-- **Survoler** une case pour prévisualiser les conséquences.
-- **Cliquer** une destination, un zombie, un mécanisme ou une porte pour préparer une action.
-- **Confirmer l'action** pour jouer le tour ; les zombies agissent immédiatement après.
-- **Cliquer un symbole de porte, d'alarme ou de médicament** pour interagir si le survivant est adjacent ; les boutons contextuels apparaissent aussi à droite.
-- **Attendre, recharger, se soigner** : ces actions consomment également un tour.
-- **1 / 2 / 3** : allure discrète / normale / course.
-- **A / B / F** : déplacement / lancer de bouteille / tir.
-- **R / H / Espace** : recharger / soigner / attendre (prépare une action).
-- **Entrée** : confirmer ; **Échap** : annuler.
+### Limites importantes
 
-## Architecture
+Ce prototype teste une **direction** plus réaliste, mais n'est pas photoréaliste : une rue 3D créée principalement avec des géométries procédurales ne peut pas atteindre le niveau visuel d'un jeu conçu avec des modèles de décors scannés, des assets high-poly, du baking, des animations professionnelles et un pipeline PBR complet. Les bâtiments ne sont pas encore visitables ; le pistolet est un élément de démonstration. L'essentiel est de pouvoir juger le rendu dans un navigateur avant d'investir davantage dans des assets de qualité.
 
-- \`index.html\` : l'interface du nouveau jeu de plateau.
-- \`pharmacy.css\` : la direction artistique de l'interface.
-- \`pharmacy-engine.js\` : règles pures, déterministes et testables, routes, portes, alarmes, bruit, combat, déplacement des infectés et simulation des conséquences.
-- \`pharmacy-board.js\` : peinture originale du plateau sur HTML Canvas 2D (24 × 16 cases).
-- \`pharmacy.js\` : interaction, prévisualisation, confirmation, animation et ambiance sonore.
+Le moteur WebGL demande un navigateur compatible et une connexion pour charger Three.js. Le personnage animé et certaines textures externes nécessitent aussi une connexion, mais disposent de solutions de secours. Les tests automatiques ont porté sur la syntaxe JavaScript, les dépendances des fichiers et la génération de scène / collisions, **pas** sur une partie complète dans un navigateur réel.
 
-Les anciens prototypes 3D de la ville sont encore présents dans le dépôt, mais ne sont **plus chargés par la page d'accueil**. Le nouveau prototype n'utilise aucune bibliothèque graphique distante : il fonctionne avec le Canvas 2D natif du navigateur.
+### Crédits des ressources externes
 
-**État du jeu :** première mission expérimentale complète. Le réglage des paramètres (durée de l'alarme, nombre de zombies, ressources, collisions) et l'ergonomie sur téléphone doivent encore être évalués après les premiers essais dans un navigateur réel. Ce n'est pas un jeu commercial terminé.
+- [Three.js](https://threejs.org/) — moteur 3D, exemples et modèle Soldier.
+- [Poly Haven](https://polyhaven.com/) — [asphalt_03](https://polyhaven.com/a/asphalt_03) et [concrete_pavement](https://polyhaven.com/a/concrete_pavement), matériaux mis à disposition sous licence CC0.
 
 © Valsane Studio.
