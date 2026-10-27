@@ -4,7 +4,7 @@ export const START={x:2,z:10}, EXIT={x:28,z:9};
 export const STYLES={
  sneak:{label:'SE FAUFILER',steps:2,noise:1,visibility:3},
  walk:{label:'MARCHER',steps:3,noise:3,visibility:5},
- sprint:{label:'COURIR',steps:5,noise:7,visibility:8}
+ sprint:{label:'COURIR',steps:5,noise:8,visibility:8}
 };
 export const WEAPONS={
  pistol:{label:'PISTOLET 9 MM',range:9,damage:1,noise:14},
@@ -112,7 +112,7 @@ function computeVision(state){
 }
 export function createState(){
  const s={turn:0,phase:'playing',mode:'walk',weapon:'pistol',tool:'move',
-  player:{...START,hp:3,maxHp:3,mag:4,reserve:4,shells:0,bottles:2,medkits:1,shotgun:false},
+  player:{...START,hp:3,maxHp:3,stamina:4,maxStamina:4,mag:4,reserve:4,shells:0,bottles:2,medkits:1,shotgun:false},
   zombies:ZOMBIE_STARTS.map((p,id)=>({...p,id,hp:2,alive:true,brain:'errant',target:null,memory:0,patrolIndex:0})),
   stashes:STASHES.map(p=>({...p,looted:false})),visible:new Set(),explored:new Set(),
   noise:null,events:[{type:'intro',text:'Traversez le carrefour. Le bruit peut vous sauver… ou vous condamner.'}],
@@ -153,13 +153,15 @@ function moveZombies(s){
    destination=z.patrol[z.patrolIndex];
   }
   if(destination&&!(z.x===destination.x&&z.z===destination.z)){
-   let path=pathfind(z,destination,null,occupied);
-   if(!path.length)path=pathfind(z,destination);
-   if(path.length>1){
+   // En alerte, une horde avance plus vite, sans comportement tactique sophistiqué.
+   const steps=z.brain==='errant'?1:2;
+   for(let step=0;step<steps;step++){
+    let path=pathfind(z,destination,null,occupied);
+    if(!path.length)path=pathfind(z,destination);
+    if(path.length<=1)break;
     const next=path[1];
-    if(passable(next.x,next.z)&&!occupied.has(key(next.x,next.z))&&!(next.x===s.player.x&&next.z===s.player.z)){
-     z.x=next.x;z.z=next.z;
-    }
+    if(!passable(next.x,next.z)||occupied.has(key(next.x,next.z))||(next.x===s.player.x&&next.z===s.player.z))break;
+    z.x=next.x;z.z=next.z;
    }
   }
   occupied.add(key(z.x,z.z));
@@ -187,12 +189,18 @@ export function preview(s,dest){
  if(!s.explored.has(key(dest.x,dest.z)))return{valid:false,reason:'Zone inconnue. Explorez progressivement.'};
  if(!passable(dest.x,dest.z))return{valid:false,reason:'Obstacle : passage impossible.'};
  if(s.zombies.some(z=>z.alive&&z.x===dest.x&&z.z===dest.z))return{valid:false,reason:'Un infecté bloque cette case.'};
+ if(s.mode==='sprint'&&p.stamina<2)return{valid:false,reason:'Trop fatigué pour courir. Marchez ou attendez.'};
  const route=pathfind(p,dest,s.explored);
  if(route.length<2)return{valid:false,reason:'Déjà sur place ou passage bloqué.'};
- const steps=Math.min(STYLES[s.mode].steps,route.length-1);
+ let steps=Math.min(STYLES[s.mode].steps,route.length-1);
+ if(s.mode==='sprint'&&route.length>2){
+  // On ne peut pas zigzaguer à toute vitesse entre les obstacles.
+  const dx=route[1].x-route[0].x,dz=route[1].z-route[0].z;
+  for(let i=2;i<=steps;i++)if(route[i].x-route[i-1].x!==dx||route[i].z-route[i-1].z!==dz){steps=i-1;break}
+ }
  const end=route[steps];
  return{valid:true,kind:'move',route:route.slice(0,steps+1),end,steps,radius:STYLES[s.mode].noise,
-  text:STYLES[s.mode].label+' · '+steps+' case'+(steps>1?'s':'')+(steps<route.length-1?' (trajet partiel)':'')};
+  text:STYLES[s.mode].label+(s.mode==='sprint'?' · LIGNE DROITE':'')+' · '+steps+' case'+(steps>1?'s':'')+(steps<route.length-1?' (trajet partiel)':'')};
 }
 function resolveTurn(s,event,action){
  s.lastAction=action;
@@ -217,6 +225,7 @@ export function act(s,action){
   if(!choice.valid){s.events.push({type:'invalid',text:choice.reason});return false}
   if(action.type==='move'){
    p.x=choice.end.x;p.z=choice.end.z;
+   p.stamina=Math.max(0,Math.min(p.maxStamina,p.stamina+(s.mode==='sprint'?-2:1)));
    s.events.push({type:'move',text:choice.text});
    resolveTurn(s,{point:{x:p.x,z:p.z},radius:choice.radius,label:s.mode},action);
   }else if(action.type==='bottle'){
@@ -232,7 +241,8 @@ export function act(s,action){
   return true;
  }
  if(action.type==='wait'){
-  s.events.push({type:'wait',text:'Vous attendez et observez.'});resolveTurn(s,null,action);return true;
+  p.stamina=Math.min(p.maxStamina,p.stamina+2);
+  s.events.push({type:'wait',text:'Vous attendez et reprenez votre souffle.'});resolveTurn(s,null,action);return true;
  }
  if(action.type==='reload'){
   if(p.mag>=6||p.reserve<=0){s.events.push({type:'invalid',text:'Pas de rechargement possible.'});return false}
