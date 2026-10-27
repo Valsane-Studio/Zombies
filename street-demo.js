@@ -3,6 +3,7 @@
 import * as T from 'three';
 import {createCivilian} from './civilian.js';
 import {createClickNavigation} from './click-navigation.js';
+import {createImmersiveCamera} from './immersive-camera.js';
 import {buildStreet} from './street-world.js';
 
 const $=id=>document.getElementById(id);
@@ -42,23 +43,12 @@ const player={root:playerRoot,velocity:new T.Vector3(),aim:new T.Vector3(0,0,-1)
 const character=createCivilian(T,playerRoot);
 const pistolRig=character.pistol;
 
-// Caméra perspective oblique. Clic gauche : déplacer ; clic droit : tirer.
-const cameraTarget=new T.Vector3(playerRoot.position.x,0,playerRoot.position.z);
-let heading=.42,pitch=.96,zoom=1,interiorZoom=1;
-function cameraOffset(){
- const d=36*zoom;
- return new T.Vector3(Math.sin(heading)*Math.cos(pitch)*d,Math.sin(pitch)*d,Math.cos(heading)*Math.cos(pitch)*d);
-}
-function updateCamera(dt,force=false){
- cameraTarget.lerp(new T.Vector3(playerRoot.position.x,playerRoot.position.y,playerRoot.position.z),force?1:1-Math.exp(-dt*3.7));
- const inRoom=world.building.inside&&world.building.level<2;
- interiorZoom+=( (inRoom?.76:1)-interiorZoom )*Math.min(1,dt*3.1);
- camera.position.lerp(cameraTarget.clone().add(cameraOffset().multiplyScalar(interiorZoom)),force?1:1-Math.exp(-dt*4.0));
- camera.lookAt(cameraTarget.clone().add(new T.Vector3(0,.65,0)));
- sun.target.position.copy(cameraTarget);sun.position.copy(cameraTarget).add(new T.Vector3(-23,39,-7));
- sun.target.updateMatrixWorld();
-}
-updateCamera(.016,true);
+// Vue immersive derrière le personnage. La direction du mouvement oriente la caméra,
+ // avec rotation indépendante possible par Alt + glisser ou bouton central.
+ const immersiveCamera=createImmersiveCamera(T,{
+  camera,player:playerRoot,world,canvas:renderer.domElement,sun
+ });
+ immersiveCamera.update(.016,{force:true});
 function resize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
 window.addEventListener('resize',resize);resize();
 const keys=new Set();
@@ -70,13 +60,10 @@ window.addEventListener('keydown',e=>{
  if(k==='r')reload();
  if(k==='escape'){navigation.clear();note('DÉPLACEMENT ANNULÉ',1)}
  if(k==='h')document.body.classList.toggle('ui-hidden');
- if(k==='c'){cameraTarget.copy(playerRoot.position);updateCamera(.016,true);note('VUE RECENTRÉE',1)}
+ if(k==='c'){immersiveCamera.reset();immersiveCamera.update(.016,{force:true});note('VUE RECENTRÉE',1)}
 });
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>keys.clear());
-renderer.domElement.addEventListener('wheel',e=>{
- e.preventDefault();zoom=T.MathUtils.clamp(zoom*(e.deltaY>0?1.07:.93),.66,1.55);
-},{passive:false});
 function fireTowards(point,immediate=false){
  if(!point)return;
  navigation.faceAt(point,true);
@@ -199,10 +186,6 @@ function frame(now){
  const dt=Math.min(.045,(now-last)/1000);last=now;worldClock+=dt;
  if(!loadingDone&&worldClock>.55){loadingDone=true;$('loading').hidden=true}
  if(noticeExpiry>0&&worldClock>noticeExpiry){$('notice').hidden=true;noticeExpiry=0}
- if(keys.has('arrowleft'))heading-=dt*1.2;
- if(keys.has('arrowright'))heading+=dt*1.2;
- if(keys.has('arrowup'))pitch=Math.min(1.23,pitch+dt*.7);
- if(keys.has('arrowdown'))pitch=Math.max(.64,pitch-dt*.7);
  const travel=navigation.update(dt,worldClock,keys.has('shift'));
  world.building.update(dt,playerRoot);
  updateExplorationLabel();
@@ -227,7 +210,11 @@ function frame(now){
    if(fx.light)scene.remove(fx.light);effects.splice(i,1);
   }
  }
- updateCamera(dt);
+ immersiveCamera.update(dt,{
+  moving:player.moving,running:player.running,
+  arrowLeft:keys.has('arrowleft'),arrowRight:keys.has('arrowright'),
+  arrowUp:keys.has('arrowup'),arrowDown:keys.has('arrowdown')
+ });
  renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
