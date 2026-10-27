@@ -6,6 +6,7 @@ import {createEffects} from './effects.js';
 import {createLoot} from './loot.js';
 import {createVision} from './vision.js';
 import {createStealth} from './stealth.js';
+import {createWeather} from './weather.js';
 import {WEAPONS,MODES,profile,canUseMedkit} from './survival-rules.js';
 const $=id=>document.getElementById(id);
 const scene=new T.Scene();scene.background=new T.Color('#495c58');scene.fog=new T.FogExp2('#516660',.0085);
@@ -27,6 +28,7 @@ const fx=createEffects(T,scene,world);
 const loot=createLoot(T,scene,world);
 const vision=createVision(T,scene,world);
 const stealth=createStealth(world,vision);
+const weather=createWeather(T,scene,world);
 // Les navigateurs autorisent le son après un premier geste du joueur.
 document.addEventListener('pointerdown',()=>sound.unlock(),{passive:true});
 const basic=(color)=>new T.MeshStandardMaterial({color,roughness:.85});
@@ -136,7 +138,7 @@ function switchWeapon(type){
 }
 function startReload(){
   if(p.action||!p.alive||p.reload>0||p.reserve<=0||p.ammo>=p.magazine)return;
-  p.reload=WEAPONS[p.weapon].reload;
+  p.reload=WEAPONS[p.weapon].reload;sound.reload();
   note('RECHARGEMENT · '+WEAPONS[p.weapon].caliber,1.6);
 }
 function startLoot(){
@@ -199,7 +201,7 @@ function shoot(q,target){
   const tx=target.x+(hit?0:(Math.random()-.5)*2.6);
   const tz=target.z+(hit?0:(Math.random()-.5)*2.6);
   const ay=world.heightAt(q.x,q.z)+1.35,by=world.heightAt(target.x,target.z)+1.2;
-  sound.shoot();fx.muzzle(q,target);
+  sound.shoot(q.weapon);fx.muzzle(q,target);
   stealth.noise(q.x,q.z,w.noise,'gunshot',time);
   q.hitWarning=.6;
   tracer(q.x,ay,q.z,tx,by,tz,hit);
@@ -240,10 +242,10 @@ function updatePlayer(dt){
     if(p.action.remaining<=0){
       const action=p.action;p.action=null;
       if(action.type==='heal'){
-        p.medkits--;p.hp=Math.min(p.maxHp,p.hp+48);note('SOINS TERMINÉS · +48 PV MAX.');
+        p.medkits--;p.hp=Math.min(p.maxHp,p.hp+48);sound.pickup();note('SOINS TERMINÉS · +48 PV MAX.');
       }else if(action.type==='loot'){
         const got=loot.collect(p,action.item);
-        if(got){pickupsCollected++;note(got,4)}
+        if(got){pickupsCollected++;sound.pickup();note(got,4)}
       }
     }
   }else moveAlong(p,dt);
@@ -271,6 +273,7 @@ function updatePlayer(dt){
   p.footstep-=dt;
   if(p.walking&&p.footstep<=0){
     stealth.noise(p.x,p.z,MODES[p.mode].footstep,'footstep',time);
+    sound.step(p.mode);
     p.footstep=p.mode==='sprint'?.4:p.mode==='sneak'?.86:.6;
   }
   if(p.walking){
@@ -508,7 +511,7 @@ function frame(now){
  requestAnimationFrame(frame);
  const dt=Math.min(.042,(now-previous)/1000);previous=now;
  if(!paused&&!ended)tick(dt*rate);
- world.updateVisuals(now/1000);
+ world.updateVisuals(now/1000);weather.update(dt,cameraCenter);
  if(now-lastMapDraw>280){drawMiniMap();lastMapDraw=now}
  renderer.render(scene,camera);
 }
