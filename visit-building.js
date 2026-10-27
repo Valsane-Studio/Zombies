@@ -75,11 +75,17 @@ export function createVisitBuilding(T,scene){
  for(let i=0;i<13;i++){
   const yy=.18+i*.25,zz=-35.85+i*.38;
   box(stairs,-24.25,yy,zz,2.60,.16,.45,m.stone);
+  // Seconde volée jusqu'au toit, dans la même cage.
+  box(stairs,-24.25,Y1+.10+i*.25,zz,2.60,.16,.45,m.stone);
  }
  box(stairs,-25.7,1.8,-32.8,.13,3.35,6.0,m.metal);
  for(let i=0;i<8;i++)tube(stairs,-25.7,.2+i*.44,-35.5+i*.52,.032,.75,m.metal);
- // Premier étage : palier + appartement à explorer, véritable plancher.
- box(upper,PX,Y1-.08,PZ,19.8,.16,13.8,m.floor);
+ // Premier étage : dalle autour d'une vraie trémie d'escalier.
+ // La cage x[-25.7,-22.7], z[-36.3,-30.8] reste ouverte.
+ box(upper,-26.35,Y1-.08,PZ,1.3,.16,13.8,m.floor);
+ box(upper,-14.85,Y1-.08,PZ,15.7,.16,13.8,m.floor);
+ box(upper,-24.2,Y1-.08,-26.9,3,.16,7.8,m.floor);
+ box(upper,-24.2,Y1-.08,-36.65,3,.16,.7,m.floor);
  for(const x of [-24,-21,-18,-15,-12,-9])for(const z of [-35,-32,-29,-26]){
   box(upper,x,Y1+.009,z,2.65,.014,2.6,(Math.round(x+z)%3===0)?m.wood2:m.floor);
  }
@@ -155,12 +161,12 @@ export function createVisitBuilding(T,scene){
  }
  hotspot('entrance','Ouvrir et entrer',-17,0,-23,0,-17,-21.3);
  hotspot('blocked','Porte condamnée',-24.3,0,-23,0,-24.3,-21.4,'#ad746b');
- hotspot('stairsUp','Monter au premier étage',-24.1,.1,-33.4,0,-22.7,-32.15);
+ hotspot('stairsUp','Monter au premier étage',-24.1,.1,-35.1,0,-23.7,-35.2);
  hotspot('window','Passer par la fenêtre arrière',-9.75,0,-37,0,-9.5,-35.1);
  hotspot('aptDoor','Ouvrir l’appartement',-17.45,Y1,-29.65,1,-17.5,-31.1);
- hotspot('roofUp','Accéder au toit',-24.1,Y1,-33.0,1,-23.5,-33.0);
- hotspot('stairsDown','Redescendre au hall',-22.6,Y1,-33.4,1,-22.6,-32.3);
- hotspot('roofDown','Redescendre du toit',-24.1,Y2,-32.0,2,-23.5,-32.0);
+ hotspot('roofUp','Accéder au toit',-24.1,Y1,-35.1,1,-23.7,-35.25);
+ hotspot('stairsDown','Redescendre au hall',-24.1,Y1,-31.0,1,-23.7,-30.85);
+ hotspot('roofDown','Redescendre du toit',-24.1,Y2,-31.15,2,-23.7,-31.15);
  hotspot('note','Observer les lieux',-11.85,Y1,-27.6,1,-12.8,-27.45,'#a7c7af');
  let level=0,entranceOpen=false,apartmentOpen=false,transition=null,currentInside=false;
  const now={x:-17,z:-30};
@@ -233,10 +239,10 @@ export function createVisitBuilding(T,scene){
    const fromInside=inside(player.position.x,player.position.z);
    return animateTransition(player,[-9.75,.12,fromInside?-39.0:-35.4],0,1.05);
   }
-  if(id==='stairsUp'&&level===0)return animateTransition(player,[-22.7,Y1+.03,-32.5],1,1.55);
-  if(id==='stairsDown'&&level===1)return animateTransition(player,[-22.8,.12,-32.2],0,1.45);
-  if(id==='roofUp'&&level===1)return animateTransition(player,[-23.8,Y2+.04,-32.5],2,1.55);
-  if(id==='roofDown'&&level===2)return animateTransition(player,[-23.5,Y1+.03,-32.7],1,1.55);
+  if(id==='stairsUp'&&level===0)return animateTransition(player,[-24.1,Y1+.03,-31.0],1,1.65);
+  if(id==='stairsDown'&&level===1)return animateTransition(player,[-24.1,.12,-35.25],0,1.65);
+  if(id==='roofUp'&&level===1)return animateTransition(player,[-24.1,Y2+.04,-31.0],2,1.65);
+  if(id==='roofDown'&&level===2)return animateTransition(player,[-24.1,Y1+.03,-35.25],1,1.65);
   if(id==='aptDoor'&&level===1){
    apartmentOpen=true;aptHinge.rotation.y=-1.5;
    return 'La porte de l’appartement s’ouvre sur une pièce abandonnée.';
@@ -250,6 +256,8 @@ export function createVisitBuilding(T,scene){
    const t=Math.min(1,transition.elapsed/transition.duration);
    const eased=t*t*(3-2*t);
    player.position.copy(transition.from).lerp(transition.to,eased);
+   // La fenêtre impose un vrai franchissement du rebord.
+   if(transition.duration<1.2)player.position.y+=Math.sin(Math.PI*t)*.60;
    if(t>=1){level=transition.level;transition=null;}
   }
   updateVisibility(player);
