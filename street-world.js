@@ -1,3 +1,4 @@
+import {addOvergrowth} from './overgrowth.js';
 /* ZONE ZÉRO · Rue abandonnée — décor physique et matériaux.
    Étude visuelle : aucun système de zombies, d'inventaire ou de farming. */
 export function buildStreet(T, scene) {
@@ -365,5 +366,6 @@ export function buildStreet(T, scene) {
       if((nearX-x)**2+(nearZ-z)**2<r*r)return true;
     }return false;
   }
-  return {collides,colliders,materials:M,models};
+  const plants=addOvergrowth(T,scene,{collides,buildings:specs});
+  return {collides,colliders,materials:M,models,plants};
 }
