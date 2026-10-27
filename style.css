@@ -25,3 +25,15 @@ h1,h2,p{margin:0}.identity h1{font-size:28px;line-height:1.1;font-weight:850;let
 .overlay{z-index:8;position:fixed;inset:0;background:#061014d6;align-items:center;justify-content:center;padding:20px}.overlay:not([hidden]){display:flex}.end-card{width:min(440px,100%);padding:33px;text-align:center}.end-card h2{font-size:26px;letter-spacing:1px;margin:14px 0}.end-card p{line-height:1.7;color:#b8cac3;margin-bottom:21px}#restartButton{padding:14px 19px;background:#517363}
 @media(max-width:850px){.topbar{left:10px;right:10px;top:10px;gap:7px}.identity{padding:10px;min-width:0}.identity h1{font-size:18px}.identity p{font-size:8px}.mission{width:205px;padding:10px}.mission-line strong{font-size:11px}.mission-line span{display:none}.mission-data span{font-size:8px}.mission-data b{font-size:12px}.left{top:105px;left:10px;width:190px;gap:5px}.briefing{padding:9px}.briefing p{font-size:9px;margin-top:6px}.keyline{display:none}.position{padding:9px}.position .place{font-size:10px;margin:5px 0}.position-stats strong{font-size:12px}.position-stats span{font-size:7px}.buff{font-size:8px;padding:5px;margin-top:6px}.bottom{bottom:8px;left:8px;right:8px;display:flex;flex-direction:column-reverse;align-items:stretch;gap:6px}.squad{width:100%;padding:8px}.squad-list{margin-top:7px}.agent{padding:6px}.agent .tag{font-size:9px}.agent .weapon{font-size:8px}.actions{align-self:end;padding:5px}.actions button{padding:8px}.notice{top:110px}}
 @media(max-width:480px){.identity .eyebrow{font-size:7px}.identity h1{font-size:15px}.identity p{font-size:7px}.mission{width:168px}.mission-data{gap:4px}.mission-data>span{font-size:7px}.mission-data b{font-size:11px}.briefing{display:none}.left{top:100px}.position{width:180px}.mission .eyebrow{font-size:7px}}
+
+/* Prototype 04 : mission de traversée et mini-carte stratégique */
+.progress-text{font-size:8px;font-weight:700;letter-spacing:1.1px;text-align:right;color:#9bbbac;margin-top:-6px;margin-bottom:7px}
+.map-panel{position:absolute;right:23px;top:148px;z-index:2;width:294px;padding:12px;pointer-events:auto}
+#minimap{width:100%;height:auto;display:block;margin-top:9px;border:1px solid #5b77705e;background:#273835;cursor:crosshair;border-radius:3px}
+.map-key{display:flex;justify-content:space-between;gap:5px;margin-top:9px;flex-wrap:wrap}
+.map-key span{font-size:8px;letter-spacing:.3px;color:#a2bab1;display:inline-flex;align-items:center;gap:4px}
+.map-key i{display:inline-block;width:7px;height:7px;border-radius:50%}
+.ally-dot{background:#94d8e1}.danger-dot{background:#c7786b}.defense-dot{background:#e7c66a}.exit-dot{background:#81dcb1}
+.map-panel p{font-size:9px;margin-top:8px;color:#839c92}
+@media(max-width:850px){.map-panel{top:110px;right:9px;width:202px;padding:8px}.map-key{gap:4px}.map-key span{font-size:7px}.map-panel p{font-size:8px}.map-panel .eyebrow{font-size:8px}}
+@media(max-width:480px){.map-panel{width:160px;top:103px}.map-panel p{display:none}.map-key span{font-size:6px}.mission{width:176px}}
