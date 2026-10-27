@@ -75,11 +75,14 @@ window.addEventListener('blur',()=>keys.clear());
 renderer.domElement.addEventListener('wheel',e=>{
  e.preventDefault();zoom=T.MathUtils.clamp(zoom*(e.deltaY>0?1.07:.93),.66,1.55);
 },{passive:false});
-function fireTowards(point){
+function fireTowards(point,immediate=false){
  if(!point)return;
  navigation.faceAt(point,true);
  player.aim.set(-Math.sin(playerRoot.rotation.y),0,-Math.cos(playerRoot.rotation.y));
- shoot();
+ // Lever le bras avant le premier coup de feu ; ne pas tirer avec le bras baissé.
+ character.setAiming(true);
+ if(immediate)character.aimImmediately();
+ if(character.readyToFire())shoot();
 }
 const navigation=createClickNavigation(T,{
  world,scene,player:playerRoot,camera,canvas:renderer.domElement,onFire:fireTowards
@@ -162,7 +165,7 @@ updateAmmo();
 $('mobileFire').addEventListener('pointerdown',e=>{
  e.preventDefault();
  const point=navigation.getAim()||new T.Vector3(playerRoot.position.x+1,0,playerRoot.position.z-3);
- fireTowards(point);
+ fireTowards(point,true);
 });
 let last=performance.now(),loadingDone=false;
 function frame(now){
@@ -176,6 +179,8 @@ function frame(now){
  if(keys.has('arrowdown'))pitch=Math.max(.64,pitch-dt*.7);
  const travel=navigation.update(dt,worldClock,keys.has('shift'));
  player.moving=travel.moving;player.running=travel.running;
+ // Quand le clic droit est relâché, le bras reprend sa position naturelle.
+ character.setAiming(travel.shooting);
  character.animate(dt,worldClock,player.moving,player.running);
  player.shootCD=Math.max(0,player.shootCD-dt);
  if(player.reloading>0){
