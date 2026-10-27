@@ -178,6 +178,21 @@ $('mobileFire').addEventListener('pointerdown',e=>{
  const point=navigation.getAim()||new T.Vector3(playerRoot.position.x+1,0,playerRoot.position.z-3);
  fireTowards(point,true);
 });
+let lastZoneText='';
+function updateExplorationLabel(){
+ const level=world.building.level,inRoom=world.building.inside;
+ const nearCafe=Math.abs(playerRoot.position.x+17)<30&&playerRoot.position.z<-12;
+ const title=level===2?'SUR LE TOIT':
+  level===1?(world.building.apartmentOpen?'APPARTEMENT VISITABLE':'PREMIER ÉTAGE · PALIER'):
+  inRoom?'HALL DE L’IMMEUBLE':nearCafe?'CAFÉ NORD · IMMEUBLE ACCESSIBLE':'EXPLORATION LIBRE';
+ const hint=level===2?'Redescendez ou observez les alentours':
+  level===1?(world.building.apartmentOpen?'Découvrez les objets et le passage vers le toit':'La porte de l’appartement peut s’ouvrir'):
+  inRoom?'Escalier et fenêtre arrière à découvrir':
+  nearCafe?'Cliquez sur la porte principale pour entrer':'Explorez la rue abandonnée';
+ if(title===lastZoneText)return;
+ lastZoneText=title;
+ $('zoneStatus').textContent=title;$('zoneHint').textContent=hint;
+}
 let last=performance.now(),loadingDone=false;
 function frame(now){
  requestAnimationFrame(frame);
@@ -190,6 +205,7 @@ function frame(now){
  if(keys.has('arrowdown'))pitch=Math.max(.64,pitch-dt*.7);
  const travel=navigation.update(dt,worldClock,keys.has('shift'));
  world.building.update(dt,playerRoot);
+ updateExplorationLabel();
  player.moving=travel.moving||world.building.transitioning;player.running=travel.running;
  // Quand le clic droit est relâché, le bras reprend sa position naturelle.
  character.setAiming(travel.shooting);
