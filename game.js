@@ -36,6 +36,7 @@ const skin=[basic('#bf9c81'),basic('#b58c75'),basic('#99725c'),basic('#d3ab8c')]
 const teamColors=['#628c7b','#778da4','#a18a65','#8581a0'].map(c=>basic(c));
 const infectedClothes=['#74796d','#606c68','#7c7166','#6a645f'].map(c=>basic(c));
 const dark=basic('#2d3535'),boots=basic('#252f30'),gunMat=new T.MeshStandardMaterial({color:'#222b2e',roughness:.48,metalness:.6});
+const metal=new T.MeshStandardMaterial({color:'#495657',roughness:.52,metalness:.5});
 const skinSick=basic('#a2a48b'),blood=basic('#7b4440'),eye=basic('#c8c4a8');
 const pickCircle=new T.Raycaster(),mouse=new T.Vector2();
 const squad=[],zombies=[],effects=[],corpses=[];const names=['SURVIVANT'];
