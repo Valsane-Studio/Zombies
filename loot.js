@@ -38,7 +38,12 @@ export function createLoot(T,scene,world){
       }
       if(obj.type==='ammo'){
         p.inventory.pistol.reserve+=obj.amount;
-        if(p.unlocked.carbine)p.inventory.carbine.reserve+=Math.ceil(obj.amount*.6);
+        if(p.weapon==='pistol')p.reserve+=obj.amount;
+        if(p.unlocked.carbine){
+          const bonus=Math.ceil(obj.amount*.6);
+          p.inventory.carbine.reserve+=bonus;
+          if(p.weapon==='carbine')p.reserve+=bonus;
+        }
         gained.push('MUNITIONS RÉCUPÉRÉES');
       }
       if(obj.type==='medkit'){
