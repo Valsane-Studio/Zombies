@@ -95,8 +95,6 @@ function createActor(x,z,idx,isZombie=false){
 }
 // Mission de traversée : atteindre le point B avec tous les agents encore vivants.
 const start=world.mission.start,extraction=world.mission.exit;
-
-const start=world.mission.start,extraction=world.mission.exit;
 const p={idx:0,x:start.x,z:start.z,hp:100,maxHp:100,alive:true,actor:createActor(start.x,start.z,0),path:[],destination:null,walking:false,heading:0,animation:0,kills:0,
   weapon:'pistol',magazine:12,ammo:12,reserve:30,inventory:{
     pistol:{magazine:12,ammo:12,reserve:30},carbine:{magazine:25,ammo:0,reserve:0},shotgun:{magazine:6,ammo:0,reserve:0}
@@ -105,7 +103,6 @@ const p={idx:0,x:start.x,z:start.z,hp:100,maxHp:100,alive:true,actor:createActor
 squad.push(p);
 let selected=0,credits=0,kills=0,pickupsCollected=0,paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=-1,focusInput=false;
 let lastVisionUpdate=-1,lastMiniTime=-1,lastThreat='CALME',lastPickupLabel='';
-const names=['SURVIVANT'];
 const torch=new T.SpotLight(0xffe8b0,0,20,Math.PI/6,.35,1.2);
 torch.castShadow=false;scene.add(torch);scene.add(torch.target);
 const beamGeometry=new T.ConeGeometry(4,13,22,1,true);
@@ -257,7 +254,7 @@ function updatePlayer(dt){
   p.actor.group.position.set(p.x,world.heightAt(p.x,p.z),p.z);
   const s=p.mode==='sneak'?.66:1;
   p.actor.torso.scale.y+=(s-p.actor.torso.scale.y)*Math.min(1,dt*10);
-  p.actor.head.position.y+=(p.mode==='sneak'?1.52:1.98-p.actor.head.position.y)*Math.min(1,dt*8);
+  p.actor.head.position.y+=((p.mode==='sneak'?1.52:1.98)-p.actor.head.position.y)*Math.min(1,dt*8);
   p.actor.selection.material.color.set(p.mode==='sneak'?0xe9c77c:0x9dd3b6);
   p.cooldown=Math.max(0,p.cooldown-dt);p.hitWarning=Math.max(0,p.hitWarning-dt);
   if(p.reload>0){
@@ -425,3 +422,94 @@ function drawMiniMap(){
   g.strokeStyle='#bbd4c4';g.lineWidth=1;g.beginPath();g.moveTo(px(cameraCenter.x)-5,pz(cameraCenter.z));g.lineTo(px(cameraCenter.x)+5,pz(cameraCenter.z));
   g.moveTo(px(cameraCenter.x),pz(cameraCenter.z)-5);g.lineTo(px(cameraCenter.x),pz(cameraCenter.z)+5);g.stroke();
 }
+
+let zoom=.89,azimuth=-.74,cameraCenter=new T.Vector3(start.x,0,start.z);
+function cameraUpdate(){
+ const d=44,a=1.02;
+ camera.position.set(cameraCenter.x+d*Math.sin(azimuth)*Math.cos(a),cameraCenter.y+d*Math.sin(a),cameraCenter.z+d*Math.cos(azimuth)*Math.cos(a));
+ camera.lookAt(cameraCenter);
+ sun.position.set(cameraCenter.x-18,31,cameraCenter.z+16);
+ sun.target.position.set(cameraCenter.x,0,cameraCenter.z);sun.target.updateMatrixWorld();
+}
+function resize(){
+ const w=innerWidth,h=innerHeight,k=(w<700?20:17.6)*zoom;
+ camera.left=-k*w/h;camera.right=k*w/h;camera.top=k;camera.bottom=-k;camera.updateProjectionMatrix();
+ renderer.setSize(w,h);cameraUpdate();
+}
+window.addEventListener('resize',resize);resize();
+const canvas=renderer.domElement;let drag=null;
+function clickGround(e){
+ const r=canvas.getBoundingClientRect();
+ mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+ pickCircle.setFromCamera(mouse,camera);
+ return world.clickPoint(pickCircle);
+}
+function commandMove(point){
+ if(!p.alive)return;
+ if(world.obstruction(point.x,point.z,.4)){note('PASSAGE BOUCHÉ');return}
+ const path=world.pathfind(p,point);
+ if(!path.length){note('ITINÉRAIRE INACCESSIBLE');return}
+ p.path=path;p.destination=point;
+ if(p.action){p.action=null;note('ACTION INTERROMPUE')}
+}
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('pointerdown',e=>{
+ if(e.button!==0&&e.button!==2)return;
+ drag={id:e.pointerId,x:e.clientX,y:e.clientY,center:cameraCenter.clone(),moved:false,button:e.button};
+ canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove',e=>{
+ if(!drag||drag.id!==e.pointerId)return;
+ const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+ if(Math.hypot(dx,dy)>6)drag.moved=true;
+ if(drag.moved){
+  const k=.039*zoom,hor=new T.Vector3(Math.cos(azimuth),0,-Math.sin(azimuth)),ver=new T.Vector3(-Math.sin(azimuth),0,-Math.cos(azimuth));
+  cameraCenter.copy(drag.center).addScaledVector(hor,-dx*k).addScaledVector(ver,dy*k);
+  cameraUpdate();
+ }
+});
+canvas.addEventListener('pointerup',e=>{
+ if(!drag||drag.id!==e.pointerId)return;
+ const old=drag;drag=null;
+ if(ended||old.moved||old.button===2)return;
+ const point=clickGround(e);if(point)commandMove(point);
+});
+canvas.addEventListener('pointercancel',()=>drag=null);
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.54,Math.min(2.1,zoom*(e.deltaY>0?1.075:.93)));resize()},{passive:false});
+function recenter(){cameraCenter.set(p.x,0,p.z);cameraUpdate();note('CAMÉRA RECENTRÉE · SANS SUIVI',1.6)}
+$('locate').onclick=recenter;
+$('minimap').onclick=e=>{
+ const r=e.currentTarget.getBoundingClientRect(),u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height;
+ cameraCenter.set(world.bounds.minX+u*(world.bounds.maxX-world.bounds.minX),0,world.bounds.minZ+v*(world.bounds.maxZ-world.bounds.minZ));cameraUpdate();
+};
+$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'};
+$('speed').onclick=()=>{rate=rate===1?2:1;$('speed').textContent=rate+'×'};
+$('sound').onclick=()=>{sound.unlock();const muted=sound.setMuted(!sound.muted);$('sound').textContent=muted?'SON OFF':'♫ SON ON'};
+$('newGame').onclick=()=>location.reload();$('restartButton').onclick=()=>location.reload();
+for(const mode of ['sneak','walk','sprint'])$('mode-'+mode).onclick=()=>setMode(mode);
+for(const key of ['pistol','carbine','shotgun'])$('weapon-'+key).onclick=()=>switchWeapon(key);
+$('autoFire').onclick=()=>{p.autoFire=!p.autoFire;updateHud(true);note(p.autoFire?'TIR AUTO ON · LES TIRS FONT DU BRUIT':'TIR AUTO OFF · DISCRÉTION',2)};
+$('flashlight').onclick=()=>{p.flashlight=!p.flashlight;updateHud(true);note(p.flashlight?'LAMPE ALLUMÉE · VISIBILITÉ MAIS DÉTECTION ACCRUE':'LAMPE ÉTEINTE',2)};
+$('reload').onclick=startReload;$('medkit').onclick=startHeal;$('scavenge').onclick=startLoot;
+window.addEventListener('keydown',e=>{
+ if(['input','textarea','select'].includes(document.activeElement?.tagName?.toLowerCase()))return;
+ const key=e.key.toLowerCase();sound.unlock();
+ if(key==='1')switchWeapon('pistol');if(key==='2')switchWeapon('carbine');if(key==='3')switchWeapon('shotgun');
+ if(key==='z')setMode('sneak');if(key==='x')setMode('walk');if(key==='v')setMode('sprint');
+ if(key==='f')$('autoFire').click();if(key==='l')$('flashlight').click();
+ if(key==='r')startReload();if(key==='h')startHeal();if(key==='e')startLoot();if(key==='c')recenter();
+ if(e.code==='Space'){e.preventDefault();$('pause').click()}
+ if(key==='escape'&&paused)$('pause').click();
+});
+vision.update(p,19);loot.update(0,vision);updateHud(true);
+note('SURVIE TACTIQUE · FOUILLEZ, CONTOURNEZ, RESTEZ DISCRET',5);
+let previous=performance.now(),lastMapDraw=-999;
+function frame(now){
+ requestAnimationFrame(frame);
+ const dt=Math.min(.042,(now-previous)/1000);previous=now;
+ if(!paused&&!ended)tick(dt*rate);
+ world.updateVisuals(now/1000);
+ if(now-lastMapDraw>280){drawMiniMap();lastMapDraw=now}
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(frame);
