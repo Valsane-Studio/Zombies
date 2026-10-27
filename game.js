@@ -1,21 +1,27 @@
-/* Valsane Studio — Zone Zéro, prototype 02 : escouade tactique mobile */
+/* Valsane Studio — Zone Zéro, prototype 03 : impact, corps et ambiance */
 import * as T from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
 import {createWorld} from './world.js';
+import {createSoundscape} from './audio.js';
+import {createEffects} from './effects.js';
 const $=id=>document.getElementById(id);
-const scene=new T.Scene();scene.background=new T.Color('#596d6c');scene.fog=new T.FogExp2('#596d6c',.017);
+const scene=new T.Scene();scene.background=new T.Color('#415350');scene.fog=new T.FogExp2('#485c59',.021);
 const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
 renderer.outputColorSpace=T.SRGBColorSpace;
 renderer.toneMapping=T.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.23;
+renderer.toneMappingExposure=1.09;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
 $('game').appendChild(renderer.domElement);
-scene.add(new T.HemisphereLight(0xc8e4dc,0x2a3937,2.3));
-const ambient=new T.AmbientLight(0x70888b,.42);scene.add(ambient);
-const sun=new T.DirectionalLight(0xffe3be,3.5);sun.position.set(-17,30,15);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+scene.add(new T.HemisphereLight(0xc8dcd8,0x283e3b,1.85));
+const ambient=new T.AmbientLight(0x70888b,.34);scene.add(ambient);
+const sun=new T.DirectionalLight(0xffd7b3,2.65);sun.position.set(-17,30,15);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 sun.shadow.camera.left=-38;sun.shadow.camera.right=38;sun.shadow.camera.top=36;sun.shadow.camera.bottom=-36;sun.shadow.normalBias=.032;scene.add(sun);
 const camera=new T.OrthographicCamera(-27,27,17,-17,.1,190);
 const world=createWorld(T,scene);
+const sound=createSoundscape();
+const fx=createEffects(T,scene,world);
+// Les navigateurs autorisent le son après un premier geste du joueur.
+document.addEventListener('pointerdown',()=>sound.unlock(),{passive:true});
 const basic=(color)=>new T.MeshStandardMaterial({color,roughness:.85});
 const skin=[basic('#bf9c81'),basic('#b58c75'),basic('#99725c'),basic('#d3ab8c')];
 const teamColors=['#628c7b','#778da4','#a18a65','#8581a0'].map(c=>basic(c));
@@ -133,6 +139,7 @@ function spawnZombie(){
 }
 function startWave(){
   wave++;
+  sound.startWave();
   if(wave>5){end(true);return}
   spawnRemain=5+wave*4;spawnTotal=spawnRemain;spawnCountdown=.4;
   initialWave=false;
@@ -163,13 +170,20 @@ function shoot(p,target){
   const hit=Math.random()<chance;
   const ax=p.x,az=p.z,ay=world.heightAt(p.x,p.z)+1.38;
   let bx=target.x,bz=target.z,by=world.heightAt(target.x,target.z)+1.1;
+  sound.shoot();
+  fx.muzzle(p,target);
   if(!hit){bx+=(Math.random()-.5)*2.6;bz+=(Math.random()-.5)*2.6}
   tracer(ax,ay,az,bx,by,bz,hit);
   if(hit){
+    // Chaque coup au but déclenche une réaction visuelle et sonore.
+    fx.hit(target);
+    sound.impact();
     target.hp-=28;
     if(target.hp<=0){
       bloodMark(target.x,target.z,world.heightAt(target.x,target.z));
-      scene.remove(target.actor.group);target.actor.group.visible=false;
+      // Ne pas retirer immédiatement le modèle : il tombe et reste au sol 7,6 s.
+      fx.kill(target);
+      sound.death();
       credits+=100+Math.max(0,wave-1)*20;kills++;p.kills++;
     }
   }
@@ -270,6 +284,7 @@ function tick(dt){
     if(between<=0){between=4;startWave()}
   }
   updateActors(dt);updateZombies(dt);
+  fx.update(dt);
   for(let i=effects.length-1;i>=0;i--){
     const e=effects[i];e.life-=dt;e.mesh.material.opacity=Math.max(0,e.life/e.max);
     if(e.life<=0){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose();effects.splice(i,1)}
@@ -339,8 +354,14 @@ canvas.addEventListener('pointerup',e=>{
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.63,Math.min(1.7,zoom*(e.deltaY>0?1.075:.93)));resize()},{passive:false});
 function togglePause(force){paused=typeof force==='boolean'?force:!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'}
 $('pause').onclick=()=>togglePause();$('speed').onclick=()=>{rate=rate===1?2:1;$('speed').textContent=rate+'×'};
+$('sound').onclick=()=>{
+  sound.unlock();const muted=sound.setMuted(!sound.muted);
+  $('sound').textContent=muted?'SON OFF':'♫ SON ON';
+  $('sound').setAttribute('aria-pressed',String(!muted));
+};
 $('newGame').onclick=()=>location.reload();$('restartButton').onclick=()=>location.reload();
 window.addEventListener('keydown',e=>{
+  sound.unlock();
   if(['1','2','3','4'].includes(e.key))select(Number(e.key)-1);
   if(e.code==='Space'){e.preventDefault();togglePause()}
   if(e.key==='Escape'&&paused)togglePause(false);
