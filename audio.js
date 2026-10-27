@@ -71,6 +71,7 @@ export function createSoundscape(){
   }
   function reload(){noise(900,1.2,.035,.006,.15);tone(350,160,.023,.13,'triangle')}
   function pickup(){tone(600,740,.045,.12,'sine');tone(490,620,.018,.2,'triangle')}
+  function decoy(){noise(2600,1.4,.12,.001,.18);noise(1050,1.6,.09,.01,.29);tone(830,190,.05,.22,'triangle')}
   function impact(){noise(450,1.1,.10,.002,.085);tone(120,75,.02,.06)}
   function death(){noise(175,.8,.08,.018,.24,'lowpass');tone(85,43,.045,.24,'sawtooth')}
   function startWave(){tone(220,140,.028,.25,'triangle')}
@@ -78,5 +79,5 @@ export function createSoundscape(){
     muted=!!value;if(master&&context){master.gain.setTargetAtTime(muted?0:.62,context.currentTime,.03)}
     return muted;
   }
-  return {unlock,shoot,step,reload,pickup,impact,death,startWave,setMuted,get muted(){return muted}};
+  return {unlock,shoot,step,reload,pickup,decoy,impact,death,startWave,setMuted,get muted(){return muted}};
 }
