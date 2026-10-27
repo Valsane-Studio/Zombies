@@ -18,6 +18,7 @@ export function createWorld(T,scene){
     {x:71,z:38,w:11,d:13,h:2.7,rampLength:8,rampWidth:3.2,side:'west'}
   ];
   const roadX=[-75,-35,5,45,85],roadZ=[-48,-12,24,60];
+  const windowFront=[],windowSide=[],windowSills=[];
   const mission={
     start:{x:-84,z:-48},exit:{x:85,z:58,radius:4.4},
     infestations:[
@@ -44,15 +45,13 @@ export function createWorld(T,scene){
     for(const dx of [-w/2+.16,w/2-.16])box(x+dx,h+.46,z,.31,.65,d+.45,mats.cement);
     for(const dz of [-d/2+.16,d/2-.16])box(x,h+.46,z+dz,w+.2,.65,.31,mats.cement);
     // Fenêtres placées en grandes rangées, échelle cohérente avec un immeuble de 3-5 étages.
-    const windowMaterial=mats.glass,windowGeo=new T.BoxGeometry(1.18,1.18,.08);
+    // Fenêtres instanciées en lots : un seul appel de rendu par type.
     for(let xx=-w/2+1.4;xx<w/2-.25;xx+=2.5)for(let yy=2;yy<h-.85;yy+=2.65){
-      box(x+xx,yy,z+d/2+.045,1.18,1.2,.075,windowMaterial);
-      box(x+xx,yy,z-d/2-.045,1.18,1.2,.075,windowMaterial);
-      box(x+xx,yy+.66,z+d/2+.10,1.25,.10,.1,mats.light);
+      windowFront.push([x+xx,yy,z+d/2+.045],[x+xx,yy,z-d/2-.045]);
+      windowSills.push([x+xx,yy+.66,z+d/2+.10]);
     }
     for(let zz=-d/2+1.5;zz<d/2-.6;zz+=2.65)for(let yy=2;yy<h-.85;yy+=2.65){
-      box(x+w/2+.06,yy,z+zz,.075,1.12,1.22,windowMaterial);
-      box(x-w/2-.06,yy,z+zz,.075,1.12,1.22,windowMaterial);
+      windowSide.push([x+w/2+.06,yy,z+zz],[x-w/2-.06,yy,z+zz]);
     }
     const doorZ=z+d/2+.08;
     box(x,1.18,doorZ,2.4,2.3,.13,mats.steel);
@@ -110,6 +109,16 @@ export function createWorld(T,scene){
       box(centerX,.81,fenceZ,2.9,1.6,.09,mats.steel);collider(centerX,fenceZ,2.9,.09,1.6);
     }
   }
+  // Un mesh par type de fenêtre : les grands immeubles restent fluides.
+  function instances(positions,w,h,d,material){
+    if(!positions.length)return;
+    const o=new T.InstancedMesh(new T.BoxGeometry(w,h,d),material,positions.length),dummy=new T.Object3D();
+    positions.forEach((p,i)=>{dummy.position.set(p[0],p[1],p[2]);dummy.updateMatrix();o.setMatrixAt(i,dummy.matrix)});
+    o.instanceMatrix.needsUpdate=true;o.castShadow=false;o.receiveShadow=false;scene.add(o);
+  }
+  instances(windowFront,1.18,1.2,.075,mats.glass);
+  instances(windowSide,.075,1.12,1.22,mats.glass);
+  instances(windowSills,1.25,.1,.1,mats.light);
   platforms.forEach(addRaised);
   // Intersections encombrées par des barrages et des véhicules.
   function barrier(x,z,w,d,orientation='h'){
