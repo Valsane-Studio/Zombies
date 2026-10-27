@@ -158,92 +158,43 @@ function updateAmmo(){
  $('state').textContent=player.reloading>0?'RECHARGEMENT':player.ammo===0?'CHARGEUR VIDE':'PRÊT';
 }
 updateAmmo();
-// Compatible avec un premier essai sur écran tactile.
-const touchStick={x:0,y:0};
-const pad=$('movePad'),stick=$('stick');
-function changeStick(e){
- const r=pad.getBoundingClientRect();
- let dx=(e.clientX-r.left-r.width/2)/(r.width/2),dy=(e.clientY-r.top-r.height/2)/(r.height/2);
- const d=Math.hypot(dx,dy);if(d>1){dx/=d;dy/=d}
- touchStick.x=dx;touchStick.y=dy;
- stick.style.transform='translate(calc(-50% + '+(dx*27)+'px),calc(-50% + '+(dy*27)+'px))';
-}
-function resetStick(){touchStick.x=touchStick.y=0;stick.style.transform='translate(-50%,-50%)'}
-pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);changeStick(e)});
-pad.addEventListener('pointermove',e=>{if(pad.hasPointerCapture(e.pointerId))changeStick(e)});
-pad.addEventListener('pointerup',resetStick);pad.addEventListener('pointercancel',resetStick);
-$('mobileFire').addEventListener('pointerdown',e=>{e.preventDefault();shootingHeld=true;shoot()});
-$('mobileFire').addEventListener('pointerup',()=>shootingHeld=false);
-let last=performance.now();let loadingDone=false;
+// Sur écran tactile, un appui au sol commande le déplacement ; le bouton déclenche un tir.
+$('mobileFire').addEventListener('pointerdown',e=>{
+ e.preventDefault();
+ const point=navigation.getAim()||new T.Vector3(playerRoot.position.x+1,0,playerRoot.position.z-3);
+ fireTowards(point);
+});
+let last=performance.now(),loadingDone=false;
 function frame(now){
  requestAnimationFrame(frame);
  const dt=Math.min(.045,(now-last)/1000);last=now;worldClock+=dt;
- if(!loadingDone&&worldClock>.5){loadingDone=true;$('loading').hidden=true}
+ if(!loadingDone&&worldClock>.55){loadingDone=true;$('loading').hidden=true}
  if(noticeExpiry>0&&worldClock>noticeExpiry){$('notice').hidden=true;noticeExpiry=0}
  if(keys.has('arrowleft'))heading-=dt*1.2;
  if(keys.has('arrowright'))heading+=dt*1.2;
- if(keys.has('arrowup'))pitch=Math.min(1.22,pitch+dt*.7);
- if(keys.has('arrowdown'))pitch=Math.max(.62,pitch-dt*.7);
- const isUp=keys.has('w')||keys.has('z'),isDown=keys.has('s');
- const isLeft=keys.has('a')||keys.has('q'),isRight=keys.has('d');
- let mx=(isRight?1:0)-(isLeft?1:0)+touchStick.x;
- let my=(isDown?1:0)-(isUp?1:0)+touchStick.y;
- const length=Math.hypot(mx,my);
- if(length>1){mx/=length;my/=length}
- // Déplacement en coordonnées écran, indépendant de l'orientation de visée.
- const forward=new T.Vector3(-Math.sin(heading),0,-Math.cos(heading));
- const right=new T.Vector3(Math.cos(heading),0,-Math.sin(heading));
- const wish=new T.Vector3().addScaledVector(right,mx).addScaledVector(forward,-my);
- if(wish.lengthSq()>1)wish.normalize();
- player.moving=wish.lengthSq()>.002;
- player.running=player.moving&&(keys.has('shift')||keys.has('shiftleft'));
- const speed=player.running?6.65:4.05;
- const velocity=wish.multiplyScalar(speed);
- const oldX=playerRoot.position.x,oldZ=playerRoot.position.z;
- const nX=oldX+velocity.x*dt,nZ=oldZ+velocity.z*dt;
- // Glissement sur les obstacles et collisions simples, sans téléportation.
- if(!world.collides(nX,oldZ,.52))playerRoot.position.x=nX;
- if(!world.collides(playerRoot.position.x,nZ,.52))playerRoot.position.z=nZ;
- if(!pointer.active){
-   aimPoint.set(playerRoot.position.x+2,0,playerRoot.position.z-4);
- }
- // Orientation du personnage vers la souris, l'arme suit exactement la même direction.
- const face=aimPoint.clone().sub(playerRoot.position);
- face.y=0;
- if(face.lengthSq()>.1)player.aim.lerp(face.normalize(),1-Math.exp(-dt*17));
- const rotation=Math.atan2(-player.aim.x,-player.aim.z);
- const difference=Math.atan2(Math.sin(rotation-playerRoot.rotation.y),Math.cos(rotation-playerRoot.rotation.y));
- playerRoot.rotation.y+=difference*Math.min(1,dt*13);
- if(oldFallback){
-   const swing=player.moving?Math.sin(worldClock*(player.running?14.5:9))*(player.running?.48:.3):0;
-   oldFallback.legs[0].rotation.x+=(swing-oldFallback.legs[0].rotation.x)*Math.min(1,dt*13);
-   oldFallback.legs[1].rotation.x+=(-swing-oldFallback.legs[1].rotation.x)*Math.min(1,dt*13);
-   oldFallback.arms[0].rotation.x*=Math.exp(-dt*5);
-   oldFallback.arms[1].rotation.x*=Math.exp(-dt*5);
- }
- if(mixer){setAnimation(!player.moving?'idle':player.running?'run':'walk');mixer.update(dt)}
+ if(keys.has('arrowup'))pitch=Math.min(1.23,pitch+dt*.7);
+ if(keys.has('arrowdown'))pitch=Math.max(.64,pitch-dt*.7);
+ const travel=navigation.update(dt,worldClock,keys.has('shift'));
+ player.moving=travel.moving;player.running=travel.running;
+ character.animate(dt,worldClock,player.moving,player.running);
  player.shootCD=Math.max(0,player.shootCD-dt);
  if(player.reloading>0){
-   player.reloading-=dt;
-   if(player.reloading<=0){player.reloading=0;player.ammo=12;updateAmmo();note('CHARGEUR RECHARGÉ',1.4)}
+  player.reloading-=dt;
+  if(player.reloading<=0){player.reloading=0;player.ammo=12;updateAmmo();note('CHARGEUR RECHARGÉ',1.4)}
  }
- if(shootingHeld&&player.shootCD===0)shoot();
- pistolRig.position.z+=( -.55-pistolRig.position.z)*Math.min(1,dt*23);
  for(let i=effects.length-1;i>=0;i--){
-   const fx=effects[i];fx.life-=dt;
-   if(fx.mesh){
-     fx.mesh.material.opacity=Math.max(0,fx.life/fx.max)*(.96);
-     if(fx.mesh.isSprite)fx.mesh.scale.multiplyScalar(1+dt*3);
-   }
-   if(fx.light)fx.light.intensity=Math.max(0,fx.life/fx.max)*10;
-   if(fx.life<=0){
-     if(fx.mesh){scene.remove(fx.mesh);fx.mesh.geometry?.dispose();fx.mesh.material.dispose()}
-     if(fx.light)scene.remove(fx.light);
-     effects.splice(i,1);
-   }
+  const fx=effects[i];fx.life-=dt;
+  if(fx.mesh){
+   fx.mesh.material.opacity=Math.max(0,fx.life/fx.max)*.96;
+   if(fx.mesh.isSprite)fx.mesh.scale.multiplyScalar(1+dt*3);
+  }
+  if(fx.light)fx.light.intensity=Math.max(0,fx.life/fx.max)*10;
+  if(fx.life<=0){
+   if(fx.mesh){scene.remove(fx.mesh);fx.mesh.geometry?.dispose();fx.mesh.material.dispose()}
+   if(fx.light)scene.remove(fx.light);effects.splice(i,1);
+  }
  }
  updateCamera(dt);
- refreshAim();
  renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
