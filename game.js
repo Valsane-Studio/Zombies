@@ -52,19 +52,41 @@ function createActor(x,z,idx,isZombie=false){
   const pelvis=addMesh(group,box(.64,.34,.35),dark,0,.73,0);
   const head=addMesh(group,ball(isZombie?.255:.238),face,0,1.98,-.035);
   addMesh(group,box(.26,.08,.25),isZombie?blood:dark,0,2.16,-.02);
-  // Équipement et poches tactiques, mieux distinguables à la caméra oblique
+  // Silhouettes lisibles : équipement survivant / tissus déchirés des infectés.
+  const weapons={};
   if(!isZombie){
     addMesh(group,box(.53,.56,.12),dark,0,1.21,-.32);
     addMesh(group,box(.24,.14,.16),palette,-.15,1.23,-.39);
     addMesh(group,box(.24,.14,.16),palette,.15,1.23,-.39);
     addMesh(group,box(.61,.12,.4),dark,0,1.03,0);
     addMesh(group,box(.43,.15,.43),dark,0,2.2,0);
-    addMesh(group,box(.22,.12,.13),gunMat,.04,1.29,-.71);
-    addMesh(group,box(.12,.14,.56),gunMat,.04,1.24,-.97);
-    addMesh(group,box(.09,.23,.13),gunMat,.04,1.06,-.76);
+    // Sac, sangles et gourde — équipement de survie.
+    addMesh(group,box(.54,.58,.26),dark,0,1.19,.36);
+    addMesh(group,box(.48,.09,.08),palette,0,1.49,.52);
+    addMesh(group,new T.CylinderGeometry(.12,.12,.38,8),metal, -.37,1.16,.40);
+    const pistol=new T.Group();group.add(pistol);
+    addMesh(pistol,box(.22,.12,.15),gunMat,.06,1.29,-.67);
+    addMesh(pistol,box(.12,.14,.56),gunMat,.06,1.24,-.95);
+    addMesh(pistol,box(.1,.23,.13),gunMat,.06,1.06,-.78);
+    const rifle=new T.Group();group.add(rifle);rifle.visible=false;
+    addMesh(rifle,box(.16,.16,.96),gunMat,.1,1.2,-.84);
+    addMesh(rifle,box(.25,.23,.5),metal,.1,1.19,-1.15);
+    addMesh(rifle,box(.07,.07,.57),gunMat,.1,1.22,-1.55);
+    addMesh(rifle,box(.1,.31,.13),dark,.10,1.0,-.93);
+    const shotgun=new T.Group();group.add(shotgun);shotgun.visible=false;
+    addMesh(shotgun,box(.18,.2,.77),dark,.11,1.19,-.77);
+    addMesh(shotgun,new T.CylinderGeometry(.07,.07,.84,8),gunMat,.11,1.19,-1.45).rotation.x=Math.PI/2;
+    addMesh(shotgun,box(.28,.19,.34),metal,.11,1.2,-1.12);
+    weapons.pistol=pistol;weapons.carbine=rifle;weapons.shotgun=shotgun;
   }else{
     addMesh(group,box(.19,.06,.05),blood,.11,1.96,-.26);
     addMesh(group,box(.09,.07,.05),eye,-.11,2.02,-.245);
+    // Guenilles asymétriques, épaules défaites, peau abîmée.
+    const torn=basic(idx%2?'#574a43':'#6d5c4c');
+    addMesh(group,box(.32,.46,.09),torn,-.18,1.07,-.32).rotation.z=.23;
+    addMesh(group,box(.10,.31,.11),blood,.29,1.22,-.32).rotation.z=.18;
+    addMesh(group,box(.13,.11,.25),dark,.04,2.19,-.07).rotation.z=.22;
+    addMesh(group,box(.12,.05,.07),blood,-.09,1.77,-.22);
   }
   const legs=[];
   for(let s of [-1,1]){
@@ -93,7 +115,7 @@ function createActor(x,z,idx,isZombie=false){
     hpBar.castShadow=false;hpGroup.visible=!isZombie;
   }
   group.position.set(x,world.heightAt(x,z),z);
-  return{group,legs,arms,selection,hpBar,hpGroup,torso,head};
+  return{group,legs,arms,selection,hpBar,hpGroup,torso,head,weapons};
 }
 // Mission de traversée : atteindre le point B avec tous les agents encore vivants.
 const start=world.mission.start,extraction=world.mission.exit;
@@ -133,6 +155,7 @@ function switchWeapon(type){
   if(p.weapon===type)return;
   p.inventory[p.weapon].ammo=p.ammo;p.inventory[p.weapon].reserve=p.reserve;
   p.weapon=type;p.magazine=WEAPONS[type].magazine;
+  for(const [key,model] of Object.entries(p.actor.weapons))model.visible=key===type;
   p.ammo=p.inventory[type].ammo;p.reserve=p.inventory[type].reserve;
   p.reload=0;p.cooldown=.25;updateHud(true);note(WEAPONS[type].name+' ÉQUIPÉ');
 }
