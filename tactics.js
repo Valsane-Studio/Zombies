@@ -96,6 +96,15 @@ function canvasCell(e){
  const rect=renderer.domElement.getBoundingClientRect();
  pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
  raycaster.setFromCamera(pointer,camera);
+ // En mode tir, cliquer sur le volume du zombie sélectionne réellement ce zombie,
+ // pas une dalle derrière sa silhouette dans la projection isométrique.
+ if(state.tool==='shoot'){
+   for(const z of state.zombies){
+     if(!z.alive||!state.visible.has(key(z.x,z.z)))continue;
+     const actor=world.zombies.get(z.id);
+     if(actor?.group.visible&&raycaster.intersectObject(actor.group,true).length)return{x:z.x,z:z.z};
+   }
+ }
  const hit=raycaster.intersectObject(world.clickSurface,false)[0];
  if(!hit)return null;
  const x=Math.round(hit.point.x/CELL+(W-1)/2),z=Math.round(hit.point.z/CELL+(H-1)/2);
