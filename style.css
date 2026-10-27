@@ -37,3 +37,9 @@ h1,h2,p{margin:0}.identity h1{font-size:28px;line-height:1.1;font-weight:850;let
 .map-panel p{font-size:9px;margin-top:8px;color:#839c92}
 @media(max-width:850px){.map-panel{top:110px;right:9px;width:202px;padding:8px}.map-key{gap:4px}.map-key span{font-size:7px}.map-panel p{font-size:8px}.map-panel .eyebrow{font-size:8px}}
 @media(max-width:480px){.map-panel{width:160px;top:103px}.map-panel p{display:none}.map-key span{font-size:6px}.mission{width:176px}}
+
+/* Sélection tactique de groupe — lasso à la souris */
+.lasso-box{position:fixed;z-index:10;pointer-events:none;border:1.5px solid #f4cd72;background:#d2b05229;box-shadow:inset 0 0 22px #e1c16a18,0 0 13px #18130a55;border-radius:2px}
+.lasso-box[hidden]{display:none}
+#game canvas{cursor:grab}
+#game canvas:active{cursor:grabbing}
