@@ -18,6 +18,8 @@ export function createLoot(T,scene,world){
     {x:87,z:-45,type:'ammo556',amount:35},
     {x:64,z:-12,type:'ammo9',amount:22},
     {x:-22,z:55,type:'medkit',amount:1},
+    {x:-64,z:25,type:'decoy',amount:2},
+    {x:11,z:-48,type:'decoy',amount:2},
     {x:47,z:52,type:'ammo12',amount:10}
   ];
   const meta={
@@ -25,6 +27,7 @@ export function createLoot(T,scene,world){
     ammo556:{name:'MUNITIONS 5,56 MM',color:'#9eafdd'},
     ammo12:{name:'CARTOUCHES CALIBRE 12',color:'#daa177'},
     medkit:{name:'KIT DE SOINS',color:'#9cdbb1'},
+    decoy:{name:'BOUTEILLES LEURRES',color:'#d5b69a'},
     carbine:{name:'CARABINE',color:'#a8d4f0'},
     shotgun:{name:'FUSIL À POMPE',color:'#e5b984'}
   };
@@ -56,6 +59,7 @@ export function createLoot(T,scene,world){
     if(!item||item.found||Math.hypot(item.x-p.x,item.z-p.z)>2.3)return null;
     item.found=true;scene.remove(item.group);
     if(item.type==='medkit'){p.medkits=Math.min(4,p.medkits+item.amount)}
+    if(item.type==='decoy'){p.decoys=Math.min(6,p.decoys+item.amount)}
     if(item.type==='carbine'||item.type==='shotgun'){
       p.unlocked[item.type]=true;
       p.inventory[item.type].reserve+=item.amount;
