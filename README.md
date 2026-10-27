@@ -1,51 +1,54 @@
-# ZONE ZÉRO — Le Café Nord (étude d’exploration 03)
+# ZONE ZÉRO — Exploration immersive 04
 
-Une étude **d’exploration 3D à la souris**, sans zombies, sans farming ni collecte obligatoire, dans une rue abandonnée envahie par la végétation.
+**Démo jouable :** https://valsane-studio.github.io/Zombies/
 
-**Jouer :** https://valsane-studio.github.io/Zombies/
+Cette version du projet Valsane Studio explore une **caméra derrière le personnage, légèrement surélevée**, dans une rue post-apocalyptique. Le personnage est seul, en tee-shirt et pantalon, avec son pistolet. Le jeu reste un prototype d'exploration en temps réel : pas de zombies, pas de farming, pas d'inventaire ni de missions obligatoires.
 
-## Nouveau bâtiment explorable : le Café Nord
+## Ce qui change
 
-L'ancien « Café Nord », sur le côté nord de la rue, n’est plus un volume fermé décoratif. Il a été remplacé par un bâtiment réellement constitué de pièces et de niveaux.
-
-- **Hall au rez-de-chaussée** : entrée ouvrable au clic, carrelage, comptoir, mobilier abandonné, cage d’escalier.
-- **Porte condamnée** : une seconde porte de rue, barrée de planches et définitivement inaccessible. Une interaction explique pourquoi.
-- **Escalier** : les marches sont visibles, avec montée et descente animées. Le personnage peut atteindre un vrai premier étage.
-- **Premier étage** : palier, porte à ouvrir, appartement avec lit, table, bibliothèque et objets anciens.
-- **Toit** : second accès par la cage d’escalier. La vue de dessus permet d’observer les alentours et de redescendre.
-- **Fenêtre arrière** : un passage alternatif, atteignable depuis le hall ou par la cour arrière, avec animation simplifiée pour franchir le rebord.
-- **Gestion des occultations** : le toit et l’étage supérieur s’effacent quand le personnage explore le hall ; sur le palier, le toit s’efface ; il réapparaît lorsqu’on se trouve sur la terrasse.
-- **Étiquettes cliquables** : entrée, portes, escaliers, fenêtre, observations. Une interaction éloignée fait marcher le personnage jusqu’au point adapté avant de s’exécuter.
-
-Les autres immeubles restent **fermés et non visitables**. Il n’y a pas de téléportation libre entre les étages ni de système de quêtes.
+- **Caméra de troisième personne :** à environ six mètres derrière le personnage à l'extérieur, plus proche à l'intérieur. Les pivots, les changements de hauteur et le suivi sont amortis pour accompagner le survivant plutôt que surveiller un plateau.
+- **Rotation libre et recentrage :** la caméra suit l'orientation du personnage en déplacement, mais peut être orientée indépendamment avec Alt + glisser ou le bouton central ; la molette permet le zoom. Une gestion simple des obstacles évite qu'une façade passe systématiquement devant le regard.
+- **Café Nord :** l'unique immeuble visitable est conservé (hall, porte condamnée, escalier, appartement et toit), avec adaptation automatique de la caméra aux étages.
+- **La fenêtre éclairée :** une lumière vacille à l'étage, visible depuis la rue. Le joueur peut décider librement de s'approcher. Des indices sonores et un carnet permettent de découvrir une petite trace de vie. Ce n'est pas une quête ni une séquence dirigée.
+- **Ambiance sonore :** vent discret, pas, portes et grincements synthétisés localement avec Web Audio. Le son ne se lance qu'après interaction, et peut être coupé avec le bouton « SON ».
+- **Immersion visuelle :** une interface allégée qui laisse davantage de place au décor, arbres, herbes, mousse et immeubles délabrés.
 
 ## Commandes
 
-- **Clic gauche au sol** : marcher jusqu’à la destination en contournant les obstacles.
-- **Clic gauche sur l’étiquette d’une porte, d’un escalier ou d’une fenêtre** : se rapprocher et interagir.
-- **Double-clic / Maj + clic** : courir.
-- **Clic droit** : viser puis tirer ; le personnage garde son pistolet et le lève uniquement pour tirer.
-- **R** : recharger ; **Échap** : annuler un trajet.
-- **Molette** : zoom ; **flèches directionnelles** : faire pivoter ou incliner la caméra.
-- **H** : masquer l’interface ; **C** : recentrer.
-- Sur téléphone, toucher le sol pour se déplacer ; le bouton Tirer reste disponible.
+| Action | Commande |
+|---|---|
+| Marcher | Clic gauche sur le sol |
+| Courir | Double-clic ou Maj + clic gauche |
+| Interagir avec porte, escalier ou indice | Clic gauche sur son étiquette |
+| Viser et tirer | Maintenir le clic droit |
+| Recharger | R |
+| Faire pivoter la caméra | Alt + glisser / bouton central + glisser / flèches gauche-droite |
+| Ajuster la hauteur de vue | Flèches haut-bas |
+| Zoom | Molette |
+| Recentrer | C |
+| Annuler un déplacement | Échap |
+| Masquer l'interface | H |
+| Couper / activer les sons | Bouton SON |
 
-## Structure du projet
+Le déplacement au clic est volontairement conservé pour respecter les préférences établies. La caméra est maintenant derrière le survivant, et non en plongée isométrique.
 
-- \`index.html\`, \`street.css\` : page et interface.
-- \`street-demo.js\` : vue perspective, caméra, personnage, actions et changement de niveau.
-- \`civilian.js\` : personnage civil en tee-shirt et pantalon, pistolet fixé à la main.
-- \`click-navigation.js\` : navigation A*, repères de déplacement, interactions au clic et plans de hauteur.
-- \`street-world.js\` : rue et intégration du bâtiment explorable.
-- \`visit-building.js\` : architecture, mobilier, portes, escalier, appartement, toit, fenêtre, collisions par niveau et masquage des étages.
-- \`overgrowth.js\` : herbe, mousse, lierre et buissons.
+## Fichiers principaux
 
-Les anciennes versions du plateau tactique restent dans le dépôt mais ne sont plus chargées.
+- \`street-demo.js\` : jeu, caméra, événements d'exploration, sons, personnage.
+- \`immersive-camera.js\` : caméra 3e personne, suivi, rotation manuelle, rapprochement intérieur et obstacles.
+- \`immersive-ambience.js\` : vent, pas, métal, portes en synthèse Web Audio.
+- \`visit-building.js\` : Café Nord, fenêtre éclairée, intérieur, escaliers, carnet, toit.
+- \`click-navigation.js\` : navigation A*, interactions et visée.
+- \`civilian.js\` : petit personnage civil, marche et pistolet dans la main.
+- \`street-world.js\`, \`overgrowth.js\` : rue et végétation.
+- \`index.html\`, \`street.css\` : interface.
 
-## Limites de ce prototype
+Les anciens prototypes (jeu de plateau et vue du dessus) demeurent dans le dépôt, mais ne sont plus actifs sur la page d'accueil.
 
-Il s’agit d'une première exploration architecturale, **pas d’un jeu terminé**. Les bâtiments et objets sont principalement issus de géométries procédurales ; les ascensions, franchissements et ouvertures utilisent des animations simples, pas encore de captures de mouvement ni de système physique avancé. Les interactions ne sont pas toujours synchronisées à une animation de mains. Le rendu WebGL dans un véritable navigateur doit encore être examiné : les vérifications ont porté sur la syntaxe et les simulations de trajectoires/collisions.
+## Limites actuelles
 
-Texturations extérieures facultatives : [Poly Haven](https://polyhaven.com/) (CC0). Rendu : [Three.js](https://threejs.org/).
+Le jeu n'est **pas encore photoréaliste**. Les décors, les déplacements et les animations sont largement procéduraux ; une expérience vraiment convaincante exigera des modèles et animations plus aboutis, des matériaux de qualité et une amélioration de l'architecture des intérieurs. La montée d'escalier et le franchissement de fenêtre restent des transitions simplifiées.
 
-© Valsane Studio.
+Le code est vérifié en syntaxe, les modules principaux en tests simulés et la gestion de la caméra est testée en dehors du navigateur. La démo **n'a pas été validée dans un navigateur WebGL réel**, ni sa dernière mise en ligne GitHub Pages.
+
+© Valsane Studio. Ressources externes : [Three.js](https://threejs.org/) et textures [Poly Haven](https://polyhaven.com/) (CC0).
