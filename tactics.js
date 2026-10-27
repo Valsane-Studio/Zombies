@@ -159,6 +159,8 @@ function render(){
  $('ammoValue').textContent=state.weapon==='pistol'?state.player.mag+' / '+state.player.reserve:state.player.shells+' CART.';
  $('bottleValue').textContent=state.player.bottles;
  $('medkitValue').textContent=state.player.medkits;
+ $('staminaValue').textContent=state.player.stamina+' / '+state.player.maxStamina;
+ $('staminaFill').style.width=Math.round(state.player.stamina/state.player.maxStamina*100)+'%';
  $('distanceValue').textContent=manhattanUi(state.player,EXIT)+' cases';
  $('seenValue').textContent=visibleZombies(state).length+' visibles';
  const info=analysisOf(state);
