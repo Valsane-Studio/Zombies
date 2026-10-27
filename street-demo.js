@@ -4,6 +4,7 @@ import * as T from 'three';
 import {createCivilian} from './civilian.js';
 import {createClickNavigation} from './click-navigation.js';
 import {createImmersiveCamera} from './immersive-camera.js';
+import {createImmersiveAmbience} from './immersive-ambience.js';
 import {buildStreet} from './street-world.js';
 
 const $=id=>document.getElementById(id);
@@ -33,6 +34,7 @@ sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;
 sun.shadow.camera.near=1;sun.shadow.camera.far=110;
 scene.add(sun);scene.add(sun.target);
 const world=buildStreet(T,scene);
+const ambience=createImmersiveAmbience({host:window});
 $('loadingText').textContent='Préparation des déplacements et des éclairages…';
 
 const playerRoot=new T.Group();
@@ -75,6 +77,7 @@ function fireTowards(point,immediate=false){
 }
 function exploreAction(id){
  if(id==='inaccessible'){note('Cet endroit est inaccessible.',2.5);return}
+ ambience.cue(id);
  const message=world.building.activate(id,playerRoot);
  if(message)note(message,4);
  // Ouvrir la porte donne accès au hall ; le personnage franchit ensuite naturellement l'entrée.
@@ -84,6 +87,14 @@ function exploreAction(id){
 }
 const navigation=createClickNavigation(T,{
  world,scene,player:playerRoot,camera,canvas:renderer.domElement,onFire:fireTowards,onInteract:exploreAction
+});
+// Les navigateurs n'autorisent le son qu'après une interaction volontaire.
+renderer.domElement.addEventListener('pointerdown',()=>ambience.activate(),{once:true});
+const audioToggle=$('audioToggle');
+audioToggle?.addEventListener('click',()=>{
+ const on=ambience.setEnabled(!ambience.enabled);
+ audioToggle.textContent=on?'♫ SON : ON':'♫ SON : OFF';
+ audioToggle.setAttribute('aria-pressed',String(on));
 });
 
 let noticeExpiry=0,worldClock=0;
@@ -165,9 +176,20 @@ $('mobileFire').addEventListener('pointerdown',e=>{
  const point=navigation.getAim()||new T.Vector3(playerRoot.position.x+1,0,playerRoot.position.z-3);
  fireTowards(point,true);
 });
-let lastZoneText='';
+let lastZoneText='',curiosityNoticed=false,upstairsSound=false;
 function updateExplorationLabel(){
  const level=world.building.level,inRoom=world.building.inside;
+ const px=playerRoot.position.x,pz=playerRoot.position.z;
+ if(!curiosityNoticed&&level===0&&!inRoom&&Math.abs(px+17)<15&&pz<-9&&pz>-28){
+  curiosityNoticed=true;
+  note('Une lumière vacille au premier étage. Quelqu’un serait-il encore ici ?',5.8);
+  ambience.cue('metal');
+ }
+ if(curiosityNoticed&&!upstairsSound&&level===1){
+  upstairsSound=true;
+  note('Un grincement retentit derrière une porte.',4.2);
+  ambience.cue('metal');
+ }
  const nearCafe=Math.abs(playerRoot.position.x+17)<30&&playerRoot.position.z<-12;
  const title=level===2?'SUR LE TOIT':
   level===1?(world.building.apartmentOpen?'APPARTEMENT VISITABLE':'PREMIER ÉTAGE · PALIER'):
@@ -193,6 +215,8 @@ function frame(now){
  // Quand le clic droit est relâché, le bras reprend sa position naturelle.
  character.setAiming(travel.shooting);
  character.animate(dt,worldClock,player.moving,player.running);
+ ambience.update(dt,{moving:player.moving,running:player.running,
+   inside:world.building.inside,level:world.building.level});
  player.shootCD=Math.max(0,player.shootCD-dt);
  if(player.reloading>0){
   player.reloading-=dt;
