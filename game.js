@@ -95,6 +95,7 @@ starts.forEach(([x,z],i)=>{
   squad.push({x,z,idx:i,actor,hp:100,maxHp:100,speed:4.1,ammo:12,magazine:12,reload:0,cooldown:Math.random()*.25,path:[],destination:null,alive:true,kills:0,walking:false,buff:null,heading:0,animation:0});
 });
 let selected=0,credits=0,kills=0;
+const selectedAgents=new Set([0]);
 let paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=-1,activeSectors=new Set();
 let mapUpdated=-1,nearExitMessage=false,followSelected=true;
 function note(message,duration=3.5){const n=$('notice');n.textContent=message;n.classList.add('visible');notifyExpiry=time+duration}
@@ -107,21 +108,38 @@ function combatStats(p){
   return{accuracy:Math.min(.985,.78+(high?.07:0)+(boost?.15:0)-(walking?.24:0)),
     range:16+(high?4:0),cadence:boost?2.85:2,cover:boost?.42:0};
 }
-function select(i){
+function select(i,add=false){
   if(!squad[i]?.alive)return;
-  selected=i;followSelected=true;
-  renderSquad(true);
+  if(!add)selectedAgents.clear();
+  if(add&&selectedAgents.has(i)&&selectedAgents.size>1)selectedAgents.delete(i);
+  else selectedAgents.add(i);
+  selected=[...selectedAgents][0]??i;
+  followSelected=true;recenterCamera(true);renderSquad(true);
+}
+function selectLasso(indices){
+  const valid=indices.filter(i=>squad[i]?.alive);
+  if(!valid.length){note('AUCUN AGENT DANS LA SÉLECTION',2);return}
+  selectedAgents.clear();valid.forEach(i=>selectedAgents.add(i));
+  selected=valid[0];followSelected=true;recenterCamera(true);
+  renderSquad(true);note(valid.length+' AGENT'+(valid.length>1?'S':'')+' SÉLECTIONNÉ'+(valid.length>1?'S':''),2.3);
+}
+function recenterCamera(immediate=false){
+  const members=squad.filter(p=>p.alive&&selectedAgents.has(p.idx));
+  if(!members.length)return;
+  const x=members.reduce((sum,p)=>sum+p.x,0)/members.length,z=members.reduce((sum,p)=>sum+p.z,0)/members.length;
+  if(immediate)cameraCenter.set(x,0,z);
 }
 function renderSquad(force=false){
   if(!force&&time-lastHud<.2)return;lastHud=time;
   $('squadList').innerHTML=squad.map((p,i)=>{
     const hp=Math.max(0,Math.ceil(p.hp));
-    return '<button data-agent="'+i+'" class="agent '+(i===selected?'selected ':'')+(!p.alive?'dead':'')+'"><span class="tag">'+(i+1)+' · '+names[i]+'</span><span class="weapon">PISTOLET / 9 MM</span><span class="hp"><i style="width:'+hp+'%"></i></span><span class="ammo">'+(p.alive?'PV '+hp+' · '+(p.reload>0?'RECHARGE':p.ammo+'/'+p.magazine):'HORS COMBAT')+'</span></button>';
+    return '<button data-agent="'+i+'" class="agent '+(selectedAgents.has(i)?'selected ':'')+(!p.alive?'dead':'')+'"><span class="tag">'+(i+1)+' · '+names[i]+'</span><span class="weapon">PISTOLET / 9 MM</span><span class="hp"><i style="width:'+hp+'%"></i></span><span class="ammo">'+(p.alive?'PV '+hp+' · '+(p.reload>0?'RECHARGE':p.ammo+'/'+p.magazine):'HORS COMBAT')+'</span></button>';
   }).join('');
   $('squadList').querySelectorAll('[data-agent]').forEach(el=>el.onclick=()=>select(Number(el.dataset.agent)));
   const p=squad[selected];if(!p)return;
   p.buff=isBoosted(p);const stat=combatStats(p);
-  $('currentAgent').textContent=names[selected];
+  $('currentAgent').textContent=selectedAgents.size>1?'GROUPE ('+selectedAgents.size+')':names[selected];
+  if($('selectedCount'))$('selectedCount').textContent=selectedAgents.size>1?selectedAgents.size+' AGENTS ENSEMBLE':'01 AGENT';
   $('accuracy').textContent=Math.round(stat.accuracy*100)+' %';
   $('firerate').textContent=stat.cadence.toFixed(1)+' /s';
   $('range').textContent=stat.range+' m';
@@ -211,8 +229,8 @@ function updateActors(dt){
     moveAlong(p,dt);
     p.buff=isBoosted(p);
     p.actor.group.position.set(p.x,world.heightAt(p.x,p.z),p.z);
-    p.actor.selection.material.opacity=p.idx===selected?.95:.25;
-    p.actor.selection.material.color.set(p.buff?0xf6cb5c:p.idx===selected?0xa9e4d2:0x7bafa4);
+    p.actor.selection.material.opacity=selectedAgents.has(p.idx)?.95:.2;
+    p.actor.selection.material.color.set(p.buff?0xf6cb5c:selectedAgents.has(p.idx)?0xa9e4d2:0x7bafa4);
     p.cooldown=Math.max(0,p.cooldown-dt);
     if(p.reload>0){p.reload-=dt;if(p.reload<=0)p.ammo=p.magazine}
     else if(p.ammo<=0)p.reload=1.65;
@@ -263,7 +281,8 @@ function updateZombies(dt){
           if(p.hp<=0){
             p.alive=false;p.actor.selection.material.color.set(0x645b58);
             p.actor.group.rotation.z=-.85;note(names[p.idx]+' HORS COMBAT',3.2);
-            if(selected===p.idx){const next=squad.find(q=>q.alive);if(next)selected=next.idx}
+            selectedAgents.delete(p.idx);
+            if(selected===p.idx){const next=squad.find(q=>q.alive);if(next){selected=next.idx;selectedAgents.add(next.idx)}}
             if(squad.every(q=>!q.alive))end(false);
           }
         }
@@ -337,16 +356,17 @@ function drawMiniMap(){
   g.beginPath();g.arc(tx(extraction.x),tz(extraction.z),5,0,Math.PI*2);g.strokeStyle='#8ce5ba';g.lineWidth=2;g.stroke();
   g.fillStyle='#9ee4c8';g.font='bold 10px sans-serif';g.fillText('B',tx(extraction.x)-3,tz(extraction.z)+3);
   for(const p of squad)if(p.alive){
-    g.beginPath();g.arc(tx(p.x),tz(p.z),p.idx===selected?4.3:3.1,0,Math.PI*2);
-    g.fillStyle=p.idx===selected?'#fcf0bf':'#83c5d9';g.fill();
-    if(p.idx===selected){g.strokeStyle='#fff';g.lineWidth=1.3;g.stroke()}
+    g.beginPath();g.arc(tx(p.x),tz(p.z),selectedAgents.has(p.idx)?4.3:3.1,0,Math.PI*2);
+    g.fillStyle=selectedAgents.has(p.idx)?'#fcf0bf':'#83c5d9';g.fill();
+    if(selectedAgents.has(p.idx)){g.strokeStyle='#fff';g.lineWidth=1.3;g.stroke()}
   }
   // Centre de vue, pour faciliter la traversée de la grande carte.
   g.strokeStyle='#d9eee385';g.lineWidth=1;g.beginPath();
   g.moveTo(tx(cameraCenter.x)-5,tz(cameraCenter.z));g.lineTo(tx(cameraCenter.x)+5,tz(cameraCenter.z));
   g.moveTo(tx(cameraCenter.x),tz(cameraCenter.z)-5);g.lineTo(tx(cameraCenter.x),tz(cameraCenter.z)+5);g.stroke();
 }
-// Caméra orbitale tactique : glisser pour tourner ; Maj/secondaire pour déplacer ; molette zoom.
+// Caméra tactique : glisser = parcourir la carte ; Maj + glisser = lasso multi-agents.
+// Angle fixe pour ne pas faire pivoter la carte involontairement.
 let azimuth=-.74,zoom=.86,cameraCenter=new T.Vector3(start.x,0,start.z);
 function cameraUpdate(){
   const distance=44,angle=1.02;
@@ -354,7 +374,6 @@ function cameraUpdate(){
     cameraCenter.y+distance*Math.sin(angle),
     cameraCenter.z+distance*Math.cos(azimuth)*Math.cos(angle));
   camera.lookAt(cameraCenter);
-  // Ombres cohérentes pendant la traversée des quartiers.
   sun.position.set(cameraCenter.x-18,31,cameraCenter.z+16);
   sun.target.position.set(cameraCenter.x,0,cameraCenter.z);
   sun.target.updateMatrixWorld();
@@ -365,29 +384,21 @@ function resize(){
   renderer.setSize(width,height);cameraUpdate();
 }
 window.addEventListener('resize',resize);resize();
-const canvas=renderer.domElement;let down=null;
-function setupPointer(e){const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);pickCircle.setFromCamera(mouse,camera)}
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('pointerdown',e=>{
-  down={x:e.clientX,y:e.clientY,angle:azimuth,center:cameraCenter.clone(),button:e.button,pan:e.button===2||e.shiftKey};
-  canvas.setPointerCapture(e.pointerId);
-});
-canvas.addEventListener('pointermove',e=>{
-  if(!down)return;
-  const dx=e.clientX-down.x,dy=e.clientY-down.y;
-  if(down.pan){
-    followSelected=false;
-    const magnitude=.038*zoom;
-    const horizontal=new T.Vector3(Math.cos(azimuth),0,-Math.sin(azimuth));
-    const vertical=new T.Vector3(-Math.sin(azimuth),0,-Math.cos(azimuth));
-    cameraCenter.copy(down.center).addScaledVector(horizontal,-dx*magnitude).addScaledVector(vertical,dy*magnitude);
-  }else azimuth=down.angle-dx*.007;
-  cameraUpdate();
-});
-canvas.addEventListener('pointerup',e=>{
-  if(!down)return;
-  const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y)>8;const wasPan=down.pan;down=null;
-  if(moved||wasPan||ended)return;
+const canvas=renderer.domElement;
+const lasso=$('lasso');
+let down=null;
+function setupPointer(e){
+  const r=canvas.getBoundingClientRect();
+  mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+  pickCircle.setFromCamera(mouse,camera);
+}
+function updateLassoRect(x0,y0,x1,y1){
+  const left=Math.min(x0,x1),top=Math.min(y0,y1);
+  lasso.style.left=left+'px';lasso.style.top=top+'px';
+  lasso.style.width=Math.abs(x1-x0)+'px';
+  lasso.style.height=Math.abs(y1-y0)+'px';
+}
+function hitAgent(e){
   setupPointer(e);
   const agents=squad.filter(p=>p.alive);
   const hits=pickCircle.intersectObjects(agents.map(p=>p.actor.group),true);
@@ -395,18 +406,96 @@ canvas.addEventListener('pointerup',e=>{
     let g=h.object;
     while(g&&g.parent!==scene)g=g.parent;
     const player=agents.find(p=>p.actor.group===g);
-    if(player){select(player.idx);return}
+    if(player)return player;
   }
-  const target=world.clickPoint(pickCircle);if(!target)return;
-  if(world.obstruction(target.x,target.z,.35)){note('OBSTACLE : CHOISISSEZ UNE ZONE LIBRE',2);return}
-  const p=squad[selected];if(!p?.alive)return;
-  const path=world.pathfind(p,target);
-  if(path.length){p.path=path;p.destination=target;p.buff=null;renderSquad(true)}
-  else note('POSITION INACCESSIBLE : ESSAYEZ UN AUTRE POINT',2);
+  return null;
+}
+function groupMove(goal){
+  if(world.obstruction(goal.x,goal.z,.35)){
+    note('PASSAGE BOUCHÉ : CHOISISSEZ UN SOL ACCESSIBLE',2.2);return;
+  }
+  const members=squad.filter(p=>p.alive&&selectedAgents.has(p.idx));
+  if(!members.length)return;
+  // Petites formations distinctes : les agents n'occupent jamais tous le même point.
+  const offsets={1:[[0,0]],2:[[-.8,0],[.8,0]],3:[[-.8,-.7],[.8,-.7],[0,.75]],
+    4:[[-.85,-.85],[.85,-.85],[-.85,.85],[.85,.85]]}[members.length];
+  let ordered=0;
+  for(let i=0;i<members.length;i++){
+    const p=members[i],[ox,oz]=offsets[i];let path=[];
+    // En cas de couvert étroit, utiliser la case praticable la plus proche.
+    const trial=[[ox,oz],[ox*.5,oz*.5],[0,0],[-ox,oz],[ox,-oz]];
+    for(const [dx,dz] of trial){
+      const destination={x:goal.x+dx,z:goal.z+dz};
+      if(world.obstruction(destination.x,destination.z,.38))continue;
+      path=world.pathfind(p,destination);
+      if(path.length){p.destination=destination;break}
+    }
+    if(path.length){p.path=path;p.buff=null;ordered++}
+  }
+  if(ordered)note(ordered+' ORDRE'+(ordered>1?'S':'')+' DE DÉPLACEMENT',1.6);
+  else note('AUCUN ITINÉRAIRE : PASSAGE INACCESSIBLE',2.4);
+  renderSquad(true);
+}
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('pointerdown',e=>{
+  if(e.button!==0&&e.button!==2)return;
+  const box=canvas.getBoundingClientRect();
+  const mode=(e.shiftKey&&e.button===0)?'lasso':'pan';
+  down={pointerId:e.pointerId,x:e.clientX,y:e.clientY,center:cameraCenter.clone(),mode,button:e.button,moved:false};
+  if(mode==='lasso'){
+    followSelected=false;
+    lasso.hidden=false;
+    updateLassoRect(e.clientX,e.clientY,e.clientX,e.clientY);
+  }
+  canvas.setPointerCapture(e.pointerId);
 });
-canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.63,Math.min(1.7,zoom*(e.deltaY>0?1.075:.93)));resize()},{passive:false});
+canvas.addEventListener('pointermove',e=>{
+  if(!down||e.pointerId!==down.pointerId)return;
+  const dx=e.clientX-down.x,dy=e.clientY-down.y;
+  if(Math.hypot(dx,dy)>5)down.moved=true;
+  if(down.mode==='lasso'){
+    updateLassoRect(down.x,down.y,e.clientX,e.clientY);
+  }else if(down.moved){
+    followSelected=false;
+    const magnitude=.038*zoom;
+    const horizontal=new T.Vector3(Math.cos(azimuth),0,-Math.sin(azimuth));
+    const vertical=new T.Vector3(-Math.sin(azimuth),0,-Math.cos(azimuth));
+    cameraCenter.copy(down.center).addScaledVector(horizontal,-dx*magnitude).addScaledVector(vertical,dy*magnitude);
+    cameraUpdate();
+  }
+});
+canvas.addEventListener('pointerup',e=>{
+  if(!down||e.pointerId!==down.pointerId)return;
+  const state=down;down=null;
+  lasso.hidden=true;
+  if(ended)return;
+  if(state.mode==='lasso'){
+    if(state.moved){
+      const rect=canvas.getBoundingClientRect(),left=Math.min(state.x,e.clientX),right=Math.max(state.x,e.clientX),
+        top=Math.min(state.y,e.clientY),bottom=Math.max(state.y,e.clientY);
+      const inside=squad.filter(p=>{
+        if(!p.alive)return false;
+        const worldPos=new T.Vector3(p.x,world.heightAt(p.x,p.z)+1.1,p.z).project(camera);
+        const sx=rect.left+(worldPos.x+1)*rect.width/2,sy=rect.top+(1-worldPos.y)*rect.height/2;
+        return sx>=left&&sx<=right&&sy>=top&&sy<=bottom;
+      }).map(p=>p.idx);
+      selectLasso(inside);
+    }else{
+      const player=hitAgent(e);if(player)select(player.idx,true);
+    }
+    return;
+  }
+  if(state.moved||state.button===2)return;
+  const player=hitAgent(e);
+  if(player){select(player.idx);return}
+  setupPointer(e);
+  const target=world.clickPoint(pickCircle);
+  if(target)groupMove(target);
+});
+canvas.addEventListener('pointercancel',()=>{down=null;lasso.hidden=true});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.53,Math.min(2.15,zoom*(e.deltaY>0?1.075:.93)));resize()},{passive:false});
 function togglePause(force){paused=typeof force==='boolean'?force:!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'}
-$('locate').onclick=()=>{followSelected=true;note('CAMÉRA RECENTRÉE SUR '+names[selected],1.8)};
+$('locate').onclick=()=>{followSelected=true;recenterCamera(true);note('CAMÉRA RECENTRÉE SUR LA SÉLECTION',1.8)};
 $('minimap').addEventListener('click',e=>{
   const r=$('minimap').getBoundingClientRect();
   const u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height;
@@ -426,7 +515,7 @@ window.addEventListener('keydown',e=>{
   if(['1','2','3','4'].includes(e.key))select(Number(e.key)-1);
   if(e.code==='Space'){e.preventDefault();togglePause()}
   if(e.key==='Escape'&&paused)togglePause(false);
-  if(e.key.toLowerCase()==='c')followSelected=true;
+  if(e.key.toLowerCase()==='c'){followSelected=true;recenterCamera(true)}
 });
 renderSquad(true);missionHud();note('MISSION : TRAVERSEZ LA VILLE JUSQU’AU POINT B. REPÉREZ LES COUVERTS JAUNES.',5.5);
 let previous=performance.now(),lastMiniTime=-999;
@@ -434,8 +523,13 @@ function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(.045,(now-previous)/1000);previous=now;
   if(!paused&&!ended)tick(dt*rate);
-  if(followSelected&&squad[selected]?.alive){
-    const p=squad[selected];cameraCenter.lerp(new T.Vector3(p.x,0,p.z),Math.min(1,dt*2.8));
+  if(followSelected){
+    const members=squad.filter(p=>p.alive&&selectedAgents.has(p.idx));
+    if(members.length){
+      const x=members.reduce((a,p)=>a+p.x,0)/members.length;
+      const z=members.reduce((a,p)=>a+p.z,0)/members.length;
+      cameraCenter.lerp(new T.Vector3(x,0,z),Math.min(1,dt*4.2));
+    }
   }
   cameraUpdate();world.updateVisuals(now/1000);
   if(now-lastMiniTime>170){drawMiniMap();lastMiniTime=now}
