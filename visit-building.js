@@ -136,7 +136,21 @@ export function createVisitBuilding(T,scene){
   const hit=mesh(shell,new T.SphereGeometry(.85,12,9),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),
    0,.55,0,false);
   hit.userData.hotspot=id;hitMeshes.push(hit);
-  const marker={id,label,x,y,z,level,approachX:approachX??x,approachZ:approachZ??z,group:shell,ring,halo,hit};
+  // Etiquette lisible qui suit le point d'interaction et devient cliquable.
+  const card=document.createElement('canvas');card.width=512;card.height=96;
+  const context=card.getContext('2d');
+  context.fillStyle='rgba(30,43,40,.94)';
+  context.beginPath();context.roundRect(8,12,496,72,13);context.fill();
+  context.strokeStyle=id==='blocked'?'#c39087':'#b5cbb1';
+  context.lineWidth=3;context.stroke();
+  context.fillStyle=id==='blocked'?'#f4cfbd':'#f3eddb';
+  context.font='bold 31px system-ui, sans-serif';context.textAlign='center';
+  context.textBaseline='middle';context.fillText(label.toUpperCase(),256,48,468);
+  const texture=new T.CanvasTexture(card);texture.colorSpace=T.SRGBColorSpace;
+  const sprite=new T.Sprite(new T.SpriteMaterial({map:texture,transparent:true,depthWrite:false,depthTest:false}));
+  sprite.position.set(0,1.44,0);sprite.scale.set(4.1,.78,1);sprite.renderOrder=20;
+  sprite.userData.hotspot=id;hitMeshes.push(sprite);shell.add(sprite);
+  const marker={id,label,x,y,z,level,approachX:approachX??x,approachZ:approachZ??z,group:shell,ring,halo,hit,sprite};
   hotspots.push(marker);return marker;
  }
  hotspot('entrance','Ouvrir et entrer',-17,0,-23,0,-17,-21.3);
