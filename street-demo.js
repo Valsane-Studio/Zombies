@@ -44,14 +44,16 @@ const pistolRig=character.pistol;
 
 // Caméra perspective oblique. Clic gauche : déplacer ; clic droit : tirer.
 const cameraTarget=new T.Vector3(playerRoot.position.x,0,playerRoot.position.z);
-let heading=.42,pitch=.96,zoom=1;
+let heading=.42,pitch=.96,zoom=1,interiorZoom=1;
 function cameraOffset(){
  const d=36*zoom;
  return new T.Vector3(Math.sin(heading)*Math.cos(pitch)*d,Math.sin(pitch)*d,Math.cos(heading)*Math.cos(pitch)*d);
 }
 function updateCamera(dt,force=false){
- cameraTarget.lerp(new T.Vector3(playerRoot.position.x,0,playerRoot.position.z),force?1:1-Math.exp(-dt*3.7));
- camera.position.lerp(cameraTarget.clone().add(cameraOffset()),force?1:1-Math.exp(-dt*4.0));
+ cameraTarget.lerp(new T.Vector3(playerRoot.position.x,playerRoot.position.y,playerRoot.position.z),force?1:1-Math.exp(-dt*3.7));
+ const inRoom=world.building.inside&&world.building.level<2;
+ interiorZoom+=( (inRoom?.76:1)-interiorZoom )*Math.min(1,dt*3.1);
+ camera.position.lerp(cameraTarget.clone().add(cameraOffset().multiplyScalar(interiorZoom)),force?1:1-Math.exp(-dt*4.0));
  camera.lookAt(cameraTarget.clone().add(new T.Vector3(0,.65,0)));
  sun.target.position.copy(cameraTarget);sun.position.copy(cameraTarget).add(new T.Vector3(-23,39,-7));
  sun.target.updateMatrixWorld();
@@ -84,8 +86,17 @@ function fireTowards(point,immediate=false){
  if(immediate)character.aimImmediately();
  if(character.readyToFire())shoot();
 }
+function exploreAction(id){
+ if(id==='inaccessible'){note('Cet endroit est inaccessible.',2.5);return}
+ const message=world.building.activate(id,playerRoot);
+ if(message)note(message,4);
+ // Ouvrir la porte donne accès au hall ; le personnage franchit ensuite naturellement l'entrée.
+ if(id==='entrance'&&world.building.entranceOpen){
+  navigation.moveTo(new T.Vector3(-17,.12,-26),false);
+ }
+}
 const navigation=createClickNavigation(T,{
- world,scene,player:playerRoot,camera,canvas:renderer.domElement,onFire:fireTowards
+ world,scene,player:playerRoot,camera,canvas:renderer.domElement,onFire:fireTowards,onInteract:exploreAction
 });
 
 let noticeExpiry=0,worldClock=0;
@@ -178,7 +189,8 @@ function frame(now){
  if(keys.has('arrowup'))pitch=Math.min(1.23,pitch+dt*.7);
  if(keys.has('arrowdown'))pitch=Math.max(.64,pitch-dt*.7);
  const travel=navigation.update(dt,worldClock,keys.has('shift'));
- player.moving=travel.moving;player.running=travel.running;
+ world.building.update(dt,playerRoot);
+ player.moving=travel.moving||world.building.transitioning;player.running=travel.running;
  // Quand le clic droit est relâché, le bras reprend sa position naturelle.
  character.setAiming(travel.shooting);
  character.animate(dt,worldClock,player.moving,player.running);
