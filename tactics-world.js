@@ -265,7 +265,9 @@ export function createDiorama(T,scene){
    }
    for(const z of s.zombies){
      const actor=zombies.get(z.id);if(!actor)continue;
-     actor.group.visible=z.alive&&s.visible.has(key(z.x,z.z));
+     actor.group.visible=s.visible.has(key(z.x,z.z));
+     actor.group.rotation.x=z.alive?0:-Math.PI/2;
+     actor.circle.visible=z.alive;
      const p=toWorld(z.x,z.z);actor.goalX=p.x;actor.goalZ=p.z;
      actor.circle.material.color.set(z.brain==='poursuite'?0xea786c:z.brain==='alerte'||z.brain==='recherche'?0xe3ad6a:0x9e8279);
    }
@@ -289,7 +291,7 @@ export function createDiorama(T,scene){
    eRing.material.opacity=.72+.22*Math.sin(elapsed*2.4);
  }
  // Hit planes pour détecter les cases du sol, même sous les objets.
- const clickSurface=new T.Mesh(new T.PlaneGeometry(mapWidth,mapHeight),new T.MeshBasicMaterial({visible:false,side:T.DoubleSide}));
+ const clickSurface=new T.Mesh(new T.PlaneGeometry(mapWidth,mapHeight),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));
  clickSurface.rotation.x=-Math.PI/2;clickSurface.position.y=.12;scene.add(clickSurface);
  return{mats,arts,player,zombies,stashes,poles,fogMesh,setupZombies,setupStashes,sync,animate,clickSurface};
 }
