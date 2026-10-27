@@ -57,12 +57,20 @@ export function createSoundscape(){
     const g=gainAt(t,peak,.002,duration);
     o.connect(g);o.start(t);o.stop(t+duration+.01);
   }
-  function shoot(){
-    // Claquement bref et mat d'un petit pistolet, volontairement peu agressif.
-    noise(1050+Math.random()*250,.48,.20,.001,.082);
-    noise(190,.72,.15,.001,.12,'lowpass');
-    tone(155,64,.075,.105,'triangle');
+  function shoot(weapon='pistol'){
+    if(weapon==='shotgun'){
+      noise(530,.58,.29,.001,.17);noise(125,.7,.21,.002,.26,'lowpass');tone(115,41,.095,.26,'sawtooth');
+    }else if(weapon==='carbine'){
+      noise(1400+Math.random()*300,.66,.18,.001,.062);noise(260,.7,.12,.001,.08,'lowpass');tone(260,90,.05,.08,'square');
+    }else{
+      noise(1050+Math.random()*250,.48,.18,.001,.082);noise(190,.72,.13,.001,.12,'lowpass');tone(155,64,.068,.105,'triangle');
+    }
   }
+  function step(mode='walk'){
+    noise(mode==='sneak'?270:mode==='sprint'?590:400,.8,mode==='sneak'?.023:.036,.004,mode==='sprint'?.1:.075,'lowpass');
+  }
+  function reload(){noise(900,1.2,.035,.006,.15);tone(350,160,.023,.13,'triangle')}
+  function pickup(){tone(600,740,.045,.12,'sine');tone(490,620,.018,.2,'triangle')}
   function impact(){noise(450,1.1,.10,.002,.085);tone(120,75,.02,.06)}
   function death(){noise(175,.8,.08,.018,.24,'lowpass');tone(85,43,.045,.24,'sawtooth')}
   function startWave(){tone(220,140,.028,.25,'triangle')}
@@ -70,5 +78,5 @@ export function createSoundscape(){
     muted=!!value;if(master&&context){master.gain.setTargetAtTime(muted?0:.62,context.currentTime,.03)}
     return muted;
   }
-  return {unlock,shoot,impact,death,startWave,setMuted,get muted(){return muted}};
+  return {unlock,shoot,step,reload,pickup,impact,death,startWave,setMuted,get muted(){return muted}};
 }
