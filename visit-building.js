@@ -32,8 +32,8 @@ export function createVisitBuilding(T,scene){
  wall(ground,X1-.15,1.65,PZ,.32,3.1,14,m.brick);
  wall(ground,-22.5,1.65,Z1,9,3.1,.34,m.brick);
  wall(ground,-11.5,1.65,Z1,9,3.1,.34,m.brick);
- wall(ground,-22.1,1.65,Z0,9.8,3.1,.34,m.brick);
- wall(ground,-12.4,1.65,Z0,8.8,3.1,.34,m.brick);
+ wall(ground,-22.05,1.65,Z0,10.1,3.1,.34,m.brick);
+ wall(ground,-13.6,1.65,Z0,6.8,3.1,.34,m.brick);
  // L'encadrement de la vraie entrée.
  box(ground,-18.25,1.75,Z1-.12,.23,3.45,.45,m.edge);
  box(ground,-15.75,1.75,Z1-.12,.23,3.45,.45,m.edge);
@@ -42,7 +42,7 @@ export function createVisitBuilding(T,scene){
  const doorLeaf=box(entranceDoor,1.10,1.49,0,2.20,2.98,.12,m.wood);
  tube(entranceDoor,2.01,1.38,-.13,.04,.13,m.metal);
  // Fenêtre arrière : traversée possible après avoir atteint l'arrière-cour.
- wall(ground,-8.04,1.65,Z0,2.1,3.1,.34,m.brick);
+ wall(ground,-7.93,1.65,Z0,1.84,3.1,.34,m.brick);
  const rearFrame=group(ground);
  box(rearFrame,-9.24,2.7,-37,.21,.65,.45,m.edge);
  box(rearFrame,-10.3,2.7,-37,.20,.65,.45,m.edge);
@@ -174,7 +174,7 @@ export function createVisitBuilding(T,scene){
   if(collisionRect(x,z,r,X0,PZ,.38,14.3)||collisionRect(x,z,r,X1,PZ,.38,14.3))return true;
   if(collisionRect(x,z,r,-22.5,Z1,9.1,.45)||collisionRect(x,z,r,-11.5,Z1,9.1,.45))return true;
   if(!entranceOpen&&collisionRect(x,z,r,-17,Z1,2.4,.45))return true;
-  if(collisionRect(x,z,r,-22.1,Z0,9.8,.44)||collisionRect(x,z,r,-12.4,Z0,8.8,.44))return true;
+  if(collisionRect(x,z,r,-22.05,Z0,10.1,.44)||collisionRect(x,z,r,-13.6,Z0,6.8,.44)||collisionRect(x,z,r,-7.93,Z0,1.84,.44))return true;
   // Fenêtre basse franchissable seulement par une interaction : pas de passage à pied automatique.
   if(collisionRect(x,z,r,-9.75,Z0,1.5,.44))return true;
   if(collisionRect(x,z,r,-10.8,-28.25,3.65,.8))return true;
