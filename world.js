@@ -185,7 +185,7 @@ export function createWorld(T,scene){
   }
   zone(-75,-33,'COUVERT OUEST');zone(-35,-25,'ANGLE PROTÉGÉ');
   zone(-9,5.3,'TOIT DU PARKING');zone(5,32,'MURET NORD');
-  zone(44,-14.8,'APPUI DU BOULEVARD');zone(84,40,'COUVERT EST');
+  zone(44,-14.8,'APPUI DU BOULEVARD');zone(82.5,42,'COUVERT EST');
   zone(70,37,'TOIT SURÉLEVÉ');zone(-7,-47,'REPLI SUD');
   zone(5,-54,'COUVERT SUD');
   const ringMat=new T.MeshBasicMaterial({color:0xf1c550,transparent:true,opacity:.85,depthWrite:false,side:T.DoubleSide});
