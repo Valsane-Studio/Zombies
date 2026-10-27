@@ -14,23 +14,23 @@
   <div id="lasso" class="lasso-box" hidden aria-hidden="true"></div>
   <header class="topbar">
     <div class="identity panel">
-      <span class="eyebrow"><span class="status-dot"></span> VALSANE STUDIO <span class="slash">/</span> PROTOTYPE 05</span>
+      <span class="eyebrow"><span class="status-dot"></span> VALSANE STUDIO <span class="slash">/</span> PROTOTYPE 06</span>
       <h1>ZONE <span>ZÉRO</span></h1>
-      <p>ESCOUADE ALPHA <span class="slash">/</span> TRAVERSÉE DE LA ZONE CONTAMINÉE</p>
+      <p>SURVIE SOLITAIRE <span class="slash">/</span> TRAVERSÉE DE LA ZONE CONTAMINÉE</p>
     </div>
     <div class="mission panel">
-      <span class="eyebrow">MISSION 01 <span class="slash">/</span> REJOINDRE LE POINT B</span>
-      <div class="mission-line"><strong id="wave">POINT B · 190 M</strong><span id="waveState">0/4 AU POINT B</span></div>
+      <span class="eyebrow">MISSION 01 <span class="slash">/</span> SURVIVRE JUSQU'AU POINT B</span>
+      <div class="mission-line"><strong id="wave">POINT B · 190 M</strong><span id="waveState">SURVIE · 100 PV</span></div>
       <div class="progress"><i id="progress"></i></div><div class="progress-text" id="progressText">0 % DU TRAJET</div>
-      <div class="mission-data"><span>INFECTÉS RESTANTS <b id="infected">00</b></span><span>ÉLIMINÉS <b id="kills">00</b></span><span>RECHERCHE <b id="money">0 €</b></span></div>
+      <div class="mission-data"><span>INFECTÉS EN VILLE <b id="infected">00</b></span><span>ÉLIMINÉS <b id="kills">00</b></span><span>RECHERCHE <b id="money">0 €</b></span></div>
     </div>
   </header>
   <aside class="left">
     <div class="panel briefing">
       <span class="eyebrow">TACTIQUE <span class="slash">/</span> MOUVEMENT</span>
-      <p>Traversez la ville depuis le point A jusqu'à <b>l'extraction B</b>. Regroupez-y tous les survivants. Les tirs restent automatiques.</p>
-      <p>Les <b>zones rouges</b> signalent des secteurs infestés. Les <b>cercles jaunes</b> marquent des positions d'appui. Certaines rues sont bloquées : trouvez d'autres itinéraires.</p>
-      <div class="keyline"><span>MAJ + SOURIS</span> LASSO <span>C</span> SUIVRE</div>
+      <p>Traversez seul la ville depuis le point A jusqu'à <b>l'extraction B</b>. Évitez les infectés et récupérez des armes, munitions et soins en chemin.</p>
+      <p>Les <b>zones rouges</b> signalent des secteurs infestés ; les <b>cercles jaunes</b> offrent un appui. Munitions limitées. <b>1 = pistolet, 2 = carabine</b> si trouvée.</p>
+      <div class="keyline"><span>SOURIS</span> CAMÉRA <span>C</span> CENTRER</div>
     </div>
     <div class="panel position">
       <span class="eyebrow">POSITION <span class="slash">/</span> <span id="currentAgent">ALPHA</span></span>
@@ -43,15 +43,15 @@
       <div id="buff" class="buff">REPÉREZ LES ZONES JAUNES</div>
     </div>
   </aside>
-  <section class="map-panel panel" aria-label="Mini-carte tactique"><span class="eyebrow">PLAN DE SECTEUR <span class="slash">/</span> A → B</span><canvas id="minimap" width="270" height="188" title="Cliquer pour déplacer la caméra"></canvas><div class="map-key"><span><i class="ally-dot"></i> ALLIÉS</span><span><i class="danger-dot"></i> INFESTÉ</span><span><i class="defense-dot"></i> APPUI</span><span><i class="exit-dot"></i> SORTIE</span></div><p>Glisser pour parcourir · Maj + glisser : lasso · C : suivre</p></section>
+  <section class="map-panel panel" aria-label="Mini-carte tactique"><span class="eyebrow">PLAN DE SECTEUR <span class="slash">/</span> A → B</span><canvas id="minimap" width="270" height="188" title="Cliquer pour déplacer la caméra"></canvas><div class="map-key"><span><i class="ally-dot"></i> ALLIÉS</span><span><i class="danger-dot"></i> INFESTÉ</span><span><i class="defense-dot"></i> APPUI</span><span><i class="exit-dot"></i> SORTIE</span></div><p>Glisser pour parcourir · caméra manuelle · C : recentrer</p></section>
   <div id="notice" class="notice panel" role="status" aria-live="polite"></div>
   <div class="bottom">
     <section class="squad panel" aria-label="Sélection des agents">
-      <span class="eyebrow">ESCOUADE <span class="slash">/</span> <span id="selectedCount">01 AGENT</span> · 04 OPÉRATEURS</span>
+      <span class="eyebrow">SURVIE <span class="slash">/</span> <span id="selectedCount">01 SURVIVANT</span></span><div class="survival-inventory"><span id="ammoStatus">PISTOLET · 12 / 36 CART.</span><span id="lootStatus">0 RAVITAILLEMENTS</span></div>
       <div id="squadList" class="squad-list"></div>
     </section>
     <div class="actions panel">
-      <button id="locate" title="Suivre le groupe sélectionné (C)">◎ SUIVRE</button>
+      <button id="locate" title="Recentrer une fois sur le survivant (C)">◎ CENTRER</button>
       <button id="pause" class="active" title="Pause tactique (espace)">Ⅱ PAUSE</button>
       <button id="speed" title="Vitesse de simulation">1×</button>
       <button id="sound" title="Activer ou couper le son" aria-label="Activer ou couper le son" aria-pressed="true">♫ SON ON</button>
