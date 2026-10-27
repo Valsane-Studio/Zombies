@@ -49,3 +49,25 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#1c292a;col
 #scene canvas{cursor:pointer}
 .mobile-hint{align-self:center;max-width:145px;color:#e5efdf;font-size:9px;font-weight:850;letter-spacing:1px;text-shadow:0 2px 5px #10221f}
 @media(pointer:coarse){.mobileControls{align-items:end}.mobileControls button{margin-left:auto}.mobile-hint{pointer-events:none}}
+
+/* EXPÉRIENCE 04 : l'image domine, les interfaces s'effacent visuellement. */
+.brand,.mode-label,.weapon-box,.instructions{
+ background:linear-gradient(140deg,#0d1a1ba8,#0d1b1ab8);
+ border-color:#b0c9a328;box-shadow:0 9px 31px #08120e40;
+}
+.brand{padding:11px 14px 10px;min-width:204px}
+.brand h1{font-size:23px;margin:7px 0 4px}
+.brand p{font-size:8px;letter-spacing:1.3px}
+.instructions{padding:11px 14px;min-width:375px}
+.instructions p{font-size:10px;line-height:1.5}
+.bottomline{pointer-events:none}
+.audio-row{display:flex;align-items:center;gap:12px;padding-top:8px;margin-top:8px;border-top:1px solid #9fbda83d}
+.audio-row button{pointer-events:auto;border:1px solid #a9bba46b;color:#e5e5d0;background:#34504480;border-radius:3px;padding:5px 8px;font-size:9px;font-weight:850;letter-spacing:.7px;cursor:pointer}
+.audio-row button:hover{background:#53745c88}
+.audio-row span{font-size:9px;color:#bdcabb}
+.weapon-box{width:211px;padding:11px 13px}
+.gunrow{margin-top:7px;gap:8px}
+.gunrow svg{width:57px;height:34px}
+.gunfoot{margin-top:6px}
+.notice{max-width:min(75vw,520px);text-align:center;line-height:1.6;letter-spacing:.3px;font-size:11px;background:#152521eb}
+@media(max-width:850px){.instructions{min-width:0}.brand{min-width:0}}
