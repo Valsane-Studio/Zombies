@@ -1,79 +1,112 @@
 <!doctype html>
 <html lang="fr">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#101719">
-<meta name="description" content="ZONE ZÉRO — jeu de survie tactique en 3D : exploration limitée, furtivité, équipements et extraction.">
-<title>ZONE ZÉRO — Valsane Studio</title><link rel="stylesheet" href="./style.css"></head>
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#111b1d">
+ <meta name="description" content="ZONE ZÉRO — Le Carrefour. Un jeu de stratégie de survie au tour par tour, par Valsane Studio.">
+ <title>ZONE ZÉRO — Le Carrefour · Valsane Studio</title>
+ <link rel="stylesheet" href="./style.css">
+</head>
 <body>
-<main id="game" aria-label="Survie tactique en 3D"></main><div class="vignette" aria-hidden="true"></div>
-<header class="topbar">
- <div class="identity panel"><span class="eyebrow"><span class="status-dot"></span> VALSANE STUDIO <span class="slash">/</span> PROTOTYPE 07</span>
-   <h1>ZONE <span>ZÉRO</span></h1><p>SURVIE SOLITAIRE <span class="slash">/</span> VILLE CONTAMINÉE</p></div>
- <div class="mission panel"><span class="eyebrow">MISSION 01 <span class="slash">/</span> ATTEINDRE LE POINT B</span>
-   <div class="mission-line"><strong id="wave">EXTRACTION · 190 M</strong><span id="waveState">SURVIE · 100 PV</span></div>
-   <div class="progress"><i id="progress"></i></div><div class="progress-text" id="progressText">0 % EXPLORÉ</div>
-   <div class="mission-data"><span>INFECTÉS VISIBLES <b id="infected">??</b></span><span>ÉLIMINÉS <b id="kills">00</b></span><span>RECHERCHE <b id="money">0 €</b></span></div>
+ <main id="viewport" aria-label="Diorama tactique 3D du Carrefour"></main>
+ <div class="screen-vignette" aria-hidden="true"></div>
+ <header class="masthead panel">
+  <div class="brand">
+   <span class="overline"><span class="live"></span> VALSANE STUDIO <span class="slash">/</span> EXPÉRIENCE 01</span>
+   <h1>ZONE <em>ZÉRO</em></h1>
+   <p>LE CARREFOUR <span class="slash">·</span> SURVIE TACTIQUE</p>
+  </div>
+  <div class="header-stats">
+   <div><small>TOUR</small><strong id="turnValue">00</strong></div>
+   <div><small>SANTÉ</small><strong class="heart" id="hpValue">♥♥♥</strong></div>
+   <div><small>DISTANCE B</small><strong id="distanceValue">27 cases</strong></div>
+  </div>
+ </header>
+ <aside class="mission-panel panel">
+  <span class="overline">MISSION <span class="slash">/</span> SECTEUR 01</span>
+  <h2>TRAVERSER<br>LE CARREFOUR</h2>
+  <p class="story">Les rues sont désertes, mais pas silencieuses. Atteignez la sortie <strong>B</strong>. Il n'est pas nécessaire d'éliminer les infectés.</p>
+  <div class="mini-divider"></div>
+  <div class="legend-row"><span class="legend-dot green"></span><span>Vert : sortie du secteur</span></div>
+  <div class="legend-row"><span class="legend-dot amber"></span><span>Ambre : bruit et investigation</span></div>
+  <div class="legend-row"><span class="legend-dot rust"></span><span>Rouge : infecté alerté</span></div>
+  <div class="mini-divider"></div>
+  <div class="subhead">CHAQUE ACTION = UN TOUR</div>
+  <p class="smaller">Choisissez votre déplacement et vérifiez son rayon sonore avant de cliquer. Les zombies agissent <strong>après</strong> vous.</p>
+  <div class="key-row"><kbd>GLISSER</kbd> Déplacer la caméra</div>
+  <div class="key-row"><kbd>MOLETTE</kbd> Zoom</div>
+  <div class="key-row"><kbd>C</kbd> Recentrer une fois</div>
+ </aside>
+ <aside class="intel-panel panel">
+  <div class="section-line"><span class="overline">RECONNAISSANCE</span><span class="eyebrow" id="seenValue">0 visibles</span></div>
+  <div id="threats" class="threat-list"><div class="threat-empty">Observation en cours…</div></div>
+  <div class="section-line second"><span class="overline">DERNIER BRUIT</span><span id="lastNoise" class="noise-label">SILENCE</span></div>
+  <div class="mini-divider"></div>
+  <div class="section-line"><span class="overline">INFECTÉS</span><span id="intelValue" class="eyebrow">0 en alerte</span></div>
+  <div class="section-line"><span class="overline">SORTIE</span><span class="eyebrow">POINT B</span></div>
+  <div class="mission-progress"><i id="missionProgress"></i></div>
+  <div class="muted-note">Les positions des zombies hors de vue ne sont pas révélées.</div>
+ </aside>
+ <div class="focus-caption panel">
+  <span class="overline">ANTICIPATION DE L'ACTION</span>
+  <div class="forecast"><span id="previewText">Survolez une case pour prévoir le déplacement.</span><div class="decibels"><span>BRUIT</span><strong id="noiseAmount">—</strong></div></div>
+  <p>Le cercle ambré représente les infectés susceptibles d'entendre l'action, même hors de votre champ de vision.</p>
  </div>
-</header>
-<aside class="left">
- <div class="panel briefing">
-   <span class="eyebrow">RECONNAISSANCE <span class="slash">/</span> SECTEUR INCONNU</span>
-   <p>Rejoins le point B vivant. <b>Le terrain hors de ton champ de vision reste masqué.</b> Les bâtiments bloquent les lignes de vue.</p>
-   <p><b>Accroupi et derrière un obstacle</b>, tu peux laisser passer un infecté. Marcher, courir, tirer ou allumer la lampe change les risques de détection.</p>
-   <div class="keyline"><span>GLISSER</span> CAMÉRA <span>C</span> CENTRER</div>
- </div>
- <div class="panel position">
-   <span class="eyebrow">POSITION <span class="slash">/</span> <span id="currentAgent">SURVIVANT</span></span>
-   <div class="place" id="place">EN RECONNAISSANCE</div>
-   <div class="position-stats">
-     <div><span>PRÉCISION</span><strong id="accuracy">83 %</strong></div>
-     <div><span>CADENCE</span><strong id="firerate">2.2 /s</strong></div>
-     <div><span>PORTÉE</span><strong id="range">15 M</strong></div>
+ <div class="bottom-left panel">
+   <div class="section-line"><span class="overline">INVENTAIRE <span class="slash">/</span> SURVIVANT</span><span id="weaponValue" class="weapon-name">PISTOLET 9 MM</span></div>
+   <div class="inventory-grid">
+    <div><small>CHARGEUR / RÉSERVE</small><strong id="ammoValue">4 / 4</strong></div>
+    <div><small>BOUTEILLES</small><strong id="bottleValue">2</strong></div>
+    <div><small>PANSEMENTS</small><strong id="medkitValue">1</strong></div>
    </div>
-   <div id="buff" class="buff">UTILISEZ LES COUVERTS</div>
+   <div id="lootHint" class="loot-hint">FOUILLE POSSIBLE SUR UNE CASE MARQUÉE</div>
  </div>
-</aside>
-<section class="map-panel panel" aria-label="Carte d'exploration">
-  <div class="map-title"><span class="eyebrow">RECONNAISSANCE <span class="slash">/</span> A → B</span><span id="threatLabel" class="threat-label">CALME</span></div>
-  <canvas id="minimap" width="270" height="188" title="Cliquer pour déplacer la caméra"></canvas>
-  <div class="map-key"><span><i class="ally-dot"></i> SURVIVANT</span><span><i class="danger-dot"></i> VU</span><span><i class="defense-dot"></i> MATÉRIEL</span><span><i class="exit-dot"></i> SORTIE</span></div>
-  <p>Les quartiers non explorés restent inconnus. La caméra reste manuelle.</p>
-</section>
-<div id="notice" class="notice panel" role="status" aria-live="polite"></div>
-<section class="survival-tools panel" aria-label="Commandes de survie">
- <div class="tools-head"><span class="eyebrow">SURVIE TACTIQUE <span class="slash">/</span> STRATÉGIE</span><span id="searchHint">APPROCHEZ-VOUS D'UNE CACHE POUR FOUILLER</span></div>
- <div class="tool-row">
-   <div class="tool-group"><span class="tool-label">ALLURE</span>
-     <button id="mode-sneak">Z · ACCROUPI</button><button id="mode-walk" class="active">X · MARCHE</button><button id="mode-sprint">V · COURSE</button>
+ <section class="commands panel" aria-label="Actions tactiques">
+  <div class="section-line"><span class="overline">PLANIFIER LE PROCHAIN TOUR</span><button class="tiny" id="buttonCenter">◎ CENTRER</button></div>
+  <div class="command-section">
+   <div class="micro-title">DÉPLACEMENT <span>1–3</span></div>
+   <div class="button-row">
+    <button id="mode-sneak" class="mode-btn"><span>1</span> SE FAUFILER <small>2 CASES · BRUIT 1</small></button>
+    <button id="mode-walk" class="mode-btn active"><span>2</span> MARCHER <small>3 CASES · BRUIT 3</small></button>
+    <button id="mode-sprint" class="mode-btn"><span>3</span> COURIR <small>5 CASES · BRUIT 7</small></button>
    </div>
-   <div class="tool-group"><span class="tool-label">ARMES</span>
-     <button id="weapon-pistol" class="active">1 · PISTOLET</button><button id="weapon-carbine" disabled>2 · CARABINE</button><button id="weapon-shotgun" disabled>3 · POMPE</button>
+  </div>
+  <div class="command-section">
+   <div class="micro-title">ACTION SUR LA CARTE</div>
+   <div class="button-row">
+    <button id="tool-move" class="action-btn active"><span>A</span> DÉPLACER</button>
+    <button id="tool-bottle" class="action-btn"><span>B</span> LANCER UNE BOUTEILLE</button>
+    <button id="tool-shoot" class="action-btn"><span>F</span> VISER & TIRER</button>
    </div>
- </div>
- <div class="tool-row secondary">
-   <button id="autoFire">F · TIR AUTO : OFF</button><button id="flashlight">L · LAMPE : OFF</button>
-   <button id="reload">R · RECHARGER</button><button id="medkit">H · SOINS</button><button id="scavenge">E · FOUILLER</button><button id="decoy">T · LEURRE × 2</button>
- </div>
- <div class="action-progress"><i id="actionProgress"></i></div>
-</section>
-<div class="bottom">
- <section class="survivor-card panel" aria-label="État du survivant">
-  <div class="section-status"><span class="eyebrow">SURVIVANT <span class="slash">/</span> INVENTAIRE</span><span id="lootStatus">0 CACHES FOUILLÉES</span></div>
-  <div class="resource-row"><span>SANTÉ</span><div class="resource-track"><i id="healthBar" class="health"></i></div><strong id="healthVal">100 / 100</strong></div>
-  <div class="resource-row"><span>ENDURANCE</span><div class="resource-track"><i id="staminaBar" class="stamina"></i></div><strong id="staminaVal">100 / 100</strong></div>
-  <div class="resource-footer"><strong id="ammoStatus">PISTOLET · 12 / 30 9 MM</strong><span id="medkitCount">SOINS × 1</span></div>
+  </div>
+  <div class="command-section compact">
+   <div class="micro-title">ÉQUIPEMENT</div>
+   <div class="button-row">
+    <button id="buttonPistol" class="small-btn active">Q · PISTOLET</button>
+    <button id="buttonShotgun" class="small-btn" disabled>D · FUSIL À POMPE</button>
+    <button id="buttonReload" class="small-btn">R · RECHARGER</button>
+   </div>
+  </div>
+  <div class="command-section compact">
+   <div class="micro-title">GESTES</div>
+   <div class="button-row">
+    <button id="buttonLoot" class="small-btn" disabled>E · FOUILLER</button>
+    <button id="buttonHeal" class="small-btn">H · SOIGNER</button>
+    <button id="buttonWait" class="small-btn wait">ESPACE · ATTENDRE</button>
+   </div>
+  </div>
+  <div class="command-footer">
+    <button id="buttonRestart">↻ RECOMMENCER</button>
+    <button id="buttonSound">SON ACTIVÉ</button>
+  </div>
  </section>
- <div class="actions panel">
-  <button id="locate" title="Recentrer une fois sur le survivant (C)">◎ CENTRER</button>
-  <button id="pause" title="Pause (espace)">Ⅱ PAUSE</button>
-  <button id="speed" title="Vitesse de simulation">1×</button>
-  <button id="sound" title="Activer ou couper le son">♫ SON ON</button>
-  <button id="newGame" title="Recommencer">↺</button>
+ <div id="feedback" class="feedback panel" role="status" aria-live="polite">Les rues du Carrefour vous attendent.</div>
+ <div id="endOverlay" class="overlay" hidden>
+  <div class="end-card panel"><span class="overline">VALSANE STUDIO <span class="slash">/</span> RAPPORT DE TRAVERSÉE</span>
+   <h2 id="endTitle">EXTRACTION</h2><p id="endDetail"></p>
+   <button id="endRestart">REJOUER LE CARREFOUR</button>
+  </div>
  </div>
-</div>
-<div class="overlay" id="endOverlay" hidden><div class="end-card panel">
- <span class="eyebrow">VALSANE STUDIO <span class="slash">/</span> RAPPORT DE SURVIE</span>
- <h2 id="endTitle"></h2><p id="endText"></p><button id="restartButton">RECOMMENCER</button>
-</div></div>
-<script type="module" src="./game.js"></script>
-</body></html>
+ <script type="module" src="./tactics.js"></script>
+</body>
+</html>
