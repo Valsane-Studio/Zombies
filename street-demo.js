@@ -132,7 +132,7 @@ const screenPointer=new T.Vector2(0,0);
 const floorPlane=new T.Plane(new T.Vector3(0,1,0),0);
 const aimPoint=new T.Vector3(2,0,0);
 const cameraTarget=new T.Vector3(playerRoot.position.x,0,playerRoot.position.z);
-let heading=.42,pitch=.94,zoom=1,freeCamera=false;
+let heading=.42,pitch=.94,zoom=1;
 const pointer={x:innerWidth*.54,y:innerHeight*.54,active:false};
 function cameraOffset(){
  const d=36*zoom;
@@ -154,13 +154,17 @@ function resize(){
  camera.updateProjectionMatrix();
 }
 window.addEventListener('resize',resize);resize();
-function trackAim(e){
+function refreshAim(){
+ if(!pointer.active)return;
  const rect=renderer.domElement.getBoundingClientRect();
- pointer.x=e.clientX;pointer.y=e.clientY;pointer.active=true;
- screenPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ screenPointer.set((pointer.x-rect.left)/rect.width*2-1,-(pointer.y-rect.top)/rect.height*2+1);
  raycaster.setFromCamera(screenPointer,camera);
  const result=new T.Vector3();
  if(raycaster.ray.intersectPlane(floorPlane,result))aimPoint.copy(result);
+}
+function trackAim(e){
+ pointer.x=e.clientX;pointer.y=e.clientY;pointer.active=true;
+ refreshAim();
 }
 renderer.domElement.addEventListener('pointermove',trackAim);
 const keys=new Set();
@@ -314,7 +318,8 @@ function frame(now){
  face.y=0;
  if(face.lengthSq()>.1)player.aim.lerp(face.normalize(),1-Math.exp(-dt*17));
  const rotation=Math.atan2(-player.aim.x,-player.aim.z);
- playerRoot.rotation.y=T.MathUtils.lerpAngle?T.MathUtils.lerpAngle(playerRoot.rotation.y,rotation,Math.min(1,dt*13)):rotation;
+ const difference=Math.atan2(Math.sin(rotation-playerRoot.rotation.y),Math.cos(rotation-playerRoot.rotation.y));
+ playerRoot.rotation.y+=difference*Math.min(1,dt*13);
  if(oldFallback){
    const swing=player.moving?Math.sin(worldClock*(player.running?14.5:9))*(player.running?.48:.3):0;
    oldFallback.legs[0].rotation.x+=(swing-oldFallback.legs[0].rotation.x)*Math.min(1,dt*13);
@@ -344,6 +349,7 @@ function frame(now){
    }
  }
  updateCamera(dt);
+ refreshAim();
  renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
