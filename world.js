@@ -1,5 +1,6 @@
 /* ZONE ZÉRO — Secteur de traversée urbaine, prototype 04. */
 import {createNavigation} from './navigation.js';
+import {populateStreets} from './street-details.js';
 export function createWorld(T,scene){
   let seed=48107;const rand=()=>((seed=(1664525*seed+1013904223)>>>0)/4294967296);
   const m=(color,roughness=.88,metalness=0)=>new T.MeshStandardMaterial({color,roughness,metalness});
@@ -179,6 +180,8 @@ export function createWorld(T,scene){
     if(rand()<.3)box(x,.078,z,.12+rand()*.55,.05,.12+rand()*.36,mats.rust);
     else box(x,.074,z,.06+rand()*.2,.03,.1+rand()*.4,mats.vegetation);
   }
+  // Props brûlés et barrages : insérés AVANT la grille pour calculer les couloirs praticables.
+  populateStreets(T,scene,{box,collider,roadblocks,rand,mats,blockers});
   const nav=createNavigation(blockers,platforms,{minX:-93,maxX:93,minZ:-65,maxZ:65});
   function zone(x,z,name){
     const p={x,z,name,y:nav.heightAt(x,z),ring:null};spots.push(p);return p;
