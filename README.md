@@ -1,52 +1,50 @@
 # ZONE ZÉRO — Rue abandonnée
 
-## Étude visuelle 01 · 27 octobre 2026
+## Étude de rendu 02 · Un survivant, une rue et son pistolet
 
-Cette version **repart de zéro** : une petite démonstration **3D jouable en temps réel**, avec un survivant et son pistolet dans une rue post-apocalyptique. **Aucun zombie, aucun farming, aucune récolte, aucun système de mission ou de progression.** Le but est de valider le rendu, l'ambiance et la sensation des déplacements avant de construire un vrai jeu d'exploration.
+Cette version reprend le prototype d'exploration réaliste à petite échelle. **Il n'y a aucun zombie, aucun farming, aucune mission, aucune collecte** : le but est de juger les proportions, le rendu végétal et la sensation de déplacement.
 
-**Ouvrir :** https://valsane-studio.github.io/Zombies/
+**Site** : https://valsane-studio.github.io/Zombies/
 
-### Contrôles
+### Commandes
 
-- **ZQSD / WASD** : déplacer le survivant librement, par rapport à la caméra.
-- **Maj** : courir.
-- **Souris** : regarder / orienter le personnage, qui tient un pistolet.
-- **Clic gauche** : tirer dans le décor (aucun ennemi et aucun système de dégâts).
-- **R** : recharger le pistolet de démonstration (munitions d'essai renouvelables).
-- **Flèches gauche / droite** : tourner la caméra autour de la scène.
-- **Flèches haut / bas** : modifier l'angle de plongée.
+- **Clic gauche sur le sol** : rejoindre le point choisi. Le trajet contourne automatiquement les voitures, bennes et bâtiments.
+- **Double-clic ou Maj + clic gauche** : rejoindre la destination en courant.
+- **Clic droit (maintenu)** : orienter le pistolet vers le pointeur et tirer. Le personnage conserve toujours son pistolet à la main, même pendant la marche.
+- **R** : recharger le pistolet de démonstration.
+- **Échap** : annuler le déplacement.
+- **Flèches gauche / droite** : faire pivoter la caméra.
+- **Flèches haut / bas** : modifier la plongée.
 - **Molette** : zoom.
-- **C** : recentrer la vue.
-- **H** : masquer / réafficher l'interface pour examiner le rendu.
-- **Écran tactile** : joystick et bouton de tir élémentaires (à perfectionner).
+- **H** : masquer ou réafficher l'interface.
+- **C** : recentrer la caméra.
+- **Écran tactile** : toucher le sol pour se déplacer, bouton Tirer.
 
-### Direction visuelle
+Les touches ZQSD / WASD **ne dirigent plus le personnage**.
 
-- **Vraie caméra perspective**, placée au-dessus et derrière le survivant, avec déplacement fluide et ombres.
-- Rue de **145 mètres environ** bordée de bâtiments à plusieurs étages, commerces clos, fenêtres, corniches, tuyaux, enseignes, toits abîmés et petites ruelles.
-- Voitures abandonnées, bennes, vitrines barricadées, lampadaires, gravats, végétation qui repousse, flaques d'eau et détails routiers.
-- Matériaux **PBR** avec textures de chaussée et de trottoir de **Poly Haven** (CC0), chargées en ligne si disponibles. Secours sous forme de textures générées localement en Canvas, pour éviter un décor complètement vide si une ressource n'arrive pas.
-- Personnage animé **Soldier.glb** issu des exemples publics de Three.js, chargé si disponible ; personnage entièrement généré en 3D comme solution de secours.
-- Éclairage directionnel avec ombres, brouillard atmosphérique, teintes délavées et légère ambiance de fin de journée.
+### Graphismes
 
-### Fichiers actifs
+- Personnage **civil en tee-shirt et jean**. Proportions plus discrètes : le modèle est réduit à 76 % de son échelle précédente, de sorte qu'il reste plus petit que les voitures. Sa main droite tient le pistolet.
+- **Perspective oblique**, caméra douce, soleil avec ombres, brume et flaques.
+- **Nature qui reconquiert la rue** : 3 300 herbes instanciées, 460 plaques de mousse irrégulières au sol, 64 panneaux de lierre sur les façades et 110 buissons. Leur densité se concentre aux bordures des trottoirs, joints du béton et murs. Ces éléments n'interrompent pas les déplacements.
+- Les arbres, façades, enseignes et véhicules de l'étude précédente restent présents.
+- Les matériaux de sol disposent de textures de secours procédurales ; certaines textures PBR de Poly Haven peuvent aussi être chargées en ligne.
 
-- \`index.html\` : scène et commandes simplifiées.
-- \`street.css\` : interface visuelle.
-- \`street-demo.js\` : caméra, déplacements WASD, collisions, personnage, chargement glTF, tir, animations.
-- \`street-world.js\` : bâtiments, route, matériaux, véhicules, accessoires, colliders.
+### Architecture
 
-Les anciens prototypes sont **conservés dans le dépôt**, sans être chargés par cette version de la page d'accueil.
+- \`index.html\`, \`street.css\` : interface.
+- \`street-demo.js\` : moteur d'exploration, caméra, rendu, armes.
+- \`click-navigation.js\` : recherche d'itinéraires au clic, collisions, lissage des trajectoires, repère de destination.
+- \`civilian.js\` : personnage civil avec animations simples des jambes et pistolet fixé à la main.
+- \`street-world.js\` : rue, immeubles, véhicules, matières.
+- \`overgrowth.js\` : herbes, mousse, buissons, lierre, textures végétales Canvas et instancing.
 
-### Limites importantes
+Les prototypes historiques restent dans le dépôt mais **ne sont pas chargés** par l'accueil.
 
-Ce prototype teste une **direction** plus réaliste, mais n'est pas photoréaliste : une rue 3D créée principalement avec des géométries procédurales ne peut pas atteindre le niveau visuel d'un jeu conçu avec des modèles de décors scannés, des assets high-poly, du baking, des animations professionnelles et un pipeline PBR complet. Les bâtiments ne sont pas encore visitables ; le pistolet est un élément de démonstration. L'essentiel est de pouvoir juger le rendu dans un navigateur avant d'investir davantage dans des assets de qualité.
+### Limites
 
-Le moteur WebGL demande un navigateur compatible et une connexion pour charger Three.js. Le personnage animé et certaines textures externes nécessitent aussi une connexion, mais disposent de solutions de secours. Les tests automatiques ont porté sur la syntaxe JavaScript, les dépendances des fichiers et la génération de scène / collisions, **pas** sur une partie complète dans un navigateur réel.
+Le décor et le personnage restent construits principalement en géométries 3D procédurales. C'est plus détaillé qu'un plateau de jeu, mais ce n'est pas un environnement photoréaliste de production. Pour progresser franchement vers ce rendu, il faudra des modèles de personnes et de végétation texturés professionnellement, des décors scannés, de meilleures animations et une optimisation graphique.
 
-### Crédits des ressources externes
-
-- [Three.js](https://threejs.org/) — moteur 3D, exemples et modèle Soldier.
-- [Poly Haven](https://polyhaven.com/) — [asphalt_03](https://polyhaven.com/a/asphalt_03) et [concrete_pavement](https://polyhaven.com/a/concrete_pavement), matériaux mis à disposition sous licence CC0.
+Les modules ont été vérifiés en syntaxe ; la création de décor et les trajectoires de contournement d'obstacles ont été simulées. Le rendu dans un vrai navigateur WebGL n'a pas encore été contrôlé de bout en bout.
 
 © Valsane Studio.
