@@ -15,7 +15,7 @@ export function createClickNavigation(T,{world,scene,player,camera,canvas,onFire
   const rect=canvas.getBoundingClientRect();
   pointer.set((x-rect.left)/rect.width*2-1,-(y-rect.top)/rect.height*2+1);
   raycaster.setFromCamera(pointer,camera);
-  floor.constant=floorHeight();
+  floor.constant=-floorHeight();
   const hit=new T.Vector3();
   return raycaster.ray.intersectPlane(floor,hit)?hit:null;
  }
