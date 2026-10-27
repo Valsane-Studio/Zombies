@@ -129,6 +129,27 @@ export function createVisitBuilding(T,scene){
   weed.rotation.z=i%2?.22:-.3;
  }
  const hatch=box(roof,-24.1,Y2+.07,-31.8,2.3,.15,2.1,m.wood2);
+ // Une seule fenêtre encore éclairée. Visible depuis la rue :
+ // le premier détail qui intrigue avant même de franchir la porte.
+ const luminous=new T.MeshBasicMaterial({
+  color:'#f0c793',transparent:true,opacity:.82,side:T.DoubleSide,depthWrite:false
+ });
+ const glow=mesh(upper,new T.PlaneGeometry(1.82,1.45),luminous,-12.8,Y1+1.91,-22.70,false);
+ for(const xx of [-13.79,-11.81])box(upper,xx,Y1+1.91,-22.64,.16,1.67,.17,m.edge);
+ for(const yy of [Y1+1.08,Y1+2.75])box(upper,-12.8,yy,-22.64,2.14,.14,.19,m.edge);
+ box(upper,-12.8,Y1+1.91,-22.59,.06,1.53,.07,m.metal);
+ box(upper,-12.8,Y1+1.91,-22.59,1.95,.055,.07,m.metal);
+ const streetGlow=new T.PointLight('#ffbd79',7.0,13,2);
+ streetGlow.position.set(-12.8,Y1+1.9,-22.12);upper.add(streetGlow);
+ // Petite lampe demeurée allumée sur une table de l'appartement.
+ tube(upper,-11.85,Y1+.98,-27.55,.12,.24,m.metal);
+ tube(upper,-11.85,Y1+1.25,-27.55,.27,.22,m.paper);
+ const deskLight=new T.PointLight('#eec48e',5.5,9,2);
+ deskLight.position.set(-11.85,Y1+1.42,-27.55);upper.add(deskLight);
+ // Le carnet lui-même est visible sur le bureau, sans collecte de ressources.
+ const journal=box(upper,-11.76,Y1+.82,-27.67,.45,.035,.33,m.paper);
+ journal.rotation.y=.22;
+ box(upper,-11.74,Y1+.847,-27.64,.035,.008,.27,m.stain);
  // Éclairages intérieurs chaleureux et discrets.
  const light=new T.PointLight('#f2d8ac',4.4,18,2);light.position.set(-17,2.9,-28.2);root.add(light);
  const topLight=new T.PointLight('#e7d5b8',3.7,17,2);topLight.position.set(-16,Y1+2.6,-32.4);root.add(topLight);
@@ -251,10 +272,14 @@ export function createVisitBuilding(T,scene){
    apartmentOpen=true;aptHinge.rotation.y=-1.5;
    return 'La porte de l’appartement s’ouvre sur une pièce abandonnée.';
   }
-  if(id==='note')return 'Une table couverte de poussière. Un carnet et des photographies ont été laissés derrière.';
+  if(id==='note')return 'Un carnet ouvert : « Je laisse la lumière. Peut-être que quelqu’un reviendra. »';
   return '';
  }
+ let ambienceClock=0;
  function update(dt,player){
+  ambienceClock+=dt;
+  luminous.opacity=.80+.10*Math.sin(ambienceClock*1.7)+.035*Math.sin(ambienceClock*8.3);
+  streetGlow.intensity=6.7+.5*Math.sin(ambienceClock*1.2);
   if(transition){
    transition.elapsed+=dt;
    const t=Math.min(1,transition.elapsed/transition.duration);
