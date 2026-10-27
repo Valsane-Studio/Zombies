@@ -153,8 +153,8 @@ function moveZombies(s){
    destination=z.patrol[z.patrolIndex];
   }
   if(destination&&!(z.x===destination.x&&z.z===destination.z)){
-   // En alerte, une horde avance plus vite, sans comportement tactique sophistiqué.
-   const steps=z.brain==='errant'?1:2;
+   // Zombies ordinaires lents et prévisibles : une case par tour, même alertés.
+   const steps=1;
    for(let step=0;step<steps;step++){
     let path=pathfind(z,destination,null,occupied);
     if(!path.length)path=pathfind(z,destination);
