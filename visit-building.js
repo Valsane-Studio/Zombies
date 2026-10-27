@@ -87,6 +87,8 @@ export function createVisitBuilding(T,scene){
  box(upper,-24.2,Y1-.08,-26.9,3,.16,7.8,m.floor);
  box(upper,-24.2,Y1-.08,-36.65,3,.16,.7,m.floor);
  for(const x of [-24,-21,-18,-15,-12,-9])for(const z of [-35,-32,-29,-26]){
+  // Le carrelage ne doit pas recouvrir l'ouverture de l'escalier.
+  if(x===-24&&z<=-32)continue;
   box(upper,x,Y1+.009,z,2.65,.014,2.6,(Math.round(x+z)%3===0)?m.wood2:m.floor);
  }
  wall(upper,-26.85,Y1+1.55,PZ,.28,3.1,13.7,m.plaster);
