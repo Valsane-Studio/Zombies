@@ -123,9 +123,10 @@ const start=world.mission.start,extraction=world.mission.exit;
 const p={idx:0,x:start.x,z:start.z,hp:100,maxHp:100,alive:true,actor:createActor(start.x,start.z,0),path:[],destination:null,walking:false,heading:0,animation:0,kills:0,
   weapon:'pistol',magazine:12,ammo:12,reserve:30,inventory:{
     pistol:{magazine:12,ammo:12,reserve:30},carbine:{magazine:25,ammo:0,reserve:0},shotgun:{magazine:6,ammo:0,reserve:0}
-  },unlocked:{pistol:true,carbine:false,shotgun:false},medkits:1,
+  },unlocked:{pistol:true,carbine:false,shotgun:false},medkits:1,decoys:2,throwMode:false,
   stamina:100,mode:'walk',autoFire:false,flashlight:false,action:null,footstep:0,cooldown:0,reload:0,hitWarning:0,nearCover:false,buff:null};
 squad.push(p);
+const decoyEffects=[];
 let selected=0,credits=0,kills=0,pickupsCollected=0,paused=false,ended=false,rate=1,time=0,notifyExpiry=0,lastHud=-1,focusInput=false;
 let lastVisionUpdate=-1,lastMiniTime=-1,lastThreat='CALME',lastPickupLabel='';
 const torch=new T.SpotLight(0xffe8b0,0,20,Math.PI/6,.35,1.2);
@@ -177,6 +178,24 @@ function startHeal(){
   if(!canUseMedkit(p)){note('SOINS INDISPONIBLES · KIT OU PV MAX.');return}
   p.path=[];p.action={type:'heal',remaining:2.7,total:2.7};updateHud(true);
   note('UTILISATION DU KIT : RESTEZ IMMOBILE',2.5);
+}
+function throwDecoy(goal){
+  if(!p.alive||p.decoys<=0)return;
+  const distance=Math.hypot(goal.x-p.x,goal.z-p.z);
+  if(distance>13){note('LEURRE HORS DE PORTÉE · 13 M MAX.');return}
+  if(world.obstruction(goal.x,goal.z,.2)){note('IMPOSSIBLE DE LANCER DANS CET OBSTACLE');return}
+  p.decoys--;p.throwMode=false;
+  stealth.noise(goal.x,goal.z,26,'glass',time);sound.decoy();
+  const ring=new T.Mesh(new T.RingGeometry(.65,.78,40),new T.MeshBasicMaterial({color:0xf5b873,transparent:true,opacity:.86,depthWrite:false,side:T.DoubleSide}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(goal.x,world.heightAt(goal.x,goal.z)+.10,goal.z);scene.add(ring);
+  decoyEffects.push({mesh:ring,life:1.1});
+  note('VERRE BRISÉ · LES INFECTÉS ENTENDENT LE LEURRE',2.8);updateHud(true);
+}
+function toggleDecoy(){
+  if(!p.decoys){note('PLUS DE LEURRES · FOUILLEZ DES CACHES');return}
+  p.throwMode=!p.throwMode;
+  note(p.throwMode?'MODE LEURRE : CLIQUEZ À MOINS DE 13 M':'LANCER ANNULÉ',2);
+  updateHud(true);
 }
 function createZombies(){
   let variant=0;
@@ -392,6 +411,9 @@ function updateHud(force=false){
   $('threatLabel').dataset.level=$('threatLabel').textContent;
   $('searchHint').textContent=p.action?'ACTION · '+Math.ceil(p.action.remaining)+' S':lastPickupLabel?'[ E ] FOUILLER · '+lastPickupLabel:'APPROCHEZ-VOUS DES CACHES POUR FOUILLER';
   $('medkitCount').textContent='SOINS × '+p.medkits;
+  $('decoy').textContent=p.throwMode?'CLIQUER POUR LANCER':'T · LEURRE × '+p.decoys;
+  $('decoy').classList.toggle('active',p.throwMode);
+  $('decoy').disabled=p.decoys<=0;
   $('autoFire').textContent=p.autoFire?'TIR AUTO : ON':'TIR AUTO : OFF';
   $('autoFire').classList.toggle('active',p.autoFire);
   $('flashlight').textContent=p.flashlight?'LAMPE : ON':'LAMPE : OFF';
@@ -413,6 +435,11 @@ function tick(dt){
     vision.update(p,radius);lastVisionUpdate=time;
   }
   updateInfected(dt);updateLoot(dt);fx.update(dt);checkExtraction();
+  for(let i=decoyEffects.length-1;i>=0;i--){
+    const fx=decoyEffects[i];fx.life-=dt;fx.mesh.material.opacity=Math.max(0,fx.life/1.1)*.84;
+    fx.mesh.scale.setScalar(1+Math.max(0,1.1-fx.life)*6);
+    if(fx.life<=0){scene.remove(fx.mesh);fx.mesh.geometry.dispose();fx.mesh.material.dispose();decoyEffects.splice(i,1)}
+  }
   for(let i=effects.length-1;i>=0;i--){
     const e=effects[i];e.life-=dt;e.mesh.material.opacity=Math.max(0,e.life/e.max);
     if(e.life<=0){scene.remove(e.mesh);e.mesh.geometry.dispose();e.mesh.material.dispose();effects.splice(i,1)}
@@ -475,6 +502,7 @@ function clickGround(e){
 function commandMove(point){
  if(!p.alive)return;
  if(world.obstruction(point.x,point.z,.4)){note('PASSAGE BOUCHÉ');return}
+ if(p.throwMode){throwDecoy(point);return}
  const path=world.pathfind(p,point);
  if(!path.length){note('ITINÉRAIRE INACCESSIBLE');return}
  p.path=path;p.destination=point;
@@ -518,14 +546,14 @@ for(const mode of ['sneak','walk','sprint'])$('mode-'+mode).onclick=()=>setMode(
 for(const key of ['pistol','carbine','shotgun'])$('weapon-'+key).onclick=()=>switchWeapon(key);
 $('autoFire').onclick=()=>{p.autoFire=!p.autoFire;updateHud(true);note(p.autoFire?'TIR AUTO ON · LES TIRS FONT DU BRUIT':'TIR AUTO OFF · DISCRÉTION',2)};
 $('flashlight').onclick=()=>{p.flashlight=!p.flashlight;updateHud(true);note(p.flashlight?'LAMPE ALLUMÉE · VISIBILITÉ MAIS DÉTECTION ACCRUE':'LAMPE ÉTEINTE',2)};
-$('reload').onclick=startReload;$('medkit').onclick=startHeal;$('scavenge').onclick=startLoot;
+$('reload').onclick=startReload;$('medkit').onclick=startHeal;$('scavenge').onclick=startLoot;$('decoy').onclick=toggleDecoy;
 window.addEventListener('keydown',e=>{
  if(['input','textarea','select'].includes(document.activeElement?.tagName?.toLowerCase()))return;
  const key=e.key.toLowerCase();sound.unlock();
  if(key==='1')switchWeapon('pistol');if(key==='2')switchWeapon('carbine');if(key==='3')switchWeapon('shotgun');
  if(key==='z')setMode('sneak');if(key==='x')setMode('walk');if(key==='v')setMode('sprint');
  if(key==='f')$('autoFire').click();if(key==='l')$('flashlight').click();
- if(key==='r')startReload();if(key==='h')startHeal();if(key==='e')startLoot();if(key==='c')recenter();
+ if(key==='r')startReload();if(key==='h')startHeal();if(key==='e')startLoot();if(key==='t')toggleDecoy();if(key==='c')recenter();
  if(e.code==='Space'){e.preventDefault();$('pause').click()}
  if(key==='escape'&&paused)$('pause').click();
 });
