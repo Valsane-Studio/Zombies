@@ -1,62 +1,109 @@
-/* Personnage civil sobre, à l'échelle des véhicules, pistolet toujours en main. */
+/* ZONE ZÉRO — personnage civil avec bras droit articulé et arme tenue dans la main.
+   Le pistolet, la paume et les doigts partagent un seul pivot de poignet.
+   Toutes les dimensions sont locales au personnage ; échelle globale 0,76. */
 export function createCivilian(T,root){
- const fabric=(c)=>new T.MeshStandardMaterial({color:c,roughness:.93});
+ const fabric=c=>new T.MeshStandardMaterial({color:c,roughness:.93});
  const tshirt=fabric('#849187'),trim=fabric('#6f8077'),jeans=fabric('#4b5962');
  const skin=fabric('#c5a38b'),hair=fabric('#3c302b'),shoes=fabric('#363c3b'),sole=fabric('#9b9b90');
  const gun=new T.MeshStandardMaterial({color:'#323b3d',roughness:.49,metalness:.62});
- const add=(parent,geo,mat,x,y,z)=>{
-  const mesh=new T.Mesh(geo,mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+ const slide=new T.MeshStandardMaterial({color:'#444c4e',roughness:.37,metalness:.75});
+ const add=(parent,geometry,material,x=0,y=0,z=0)=>{
+  const mesh=new T.Mesh(geometry,material);
+  mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
  };
- const block=(g,x,y,z,w,h,d,m)=>add(g,new T.BoxGeometry(w,h,d),m,x,y,z);
+ const block=(group,x,y,z,w,h,d,material)=>add(group,new T.BoxGeometry(w,h,d),material,x,y,z);
+ const ball=(group,x,y,z,r,material)=>add(group,new T.SphereGeometry(r,12,10),material,x,y,z);
+ // Proportion : ~1,62 m pour une automobile de ~1,9 m de haut.
  root.scale.setScalar(.76);
  const model=new T.Group();root.add(model);
  add(model,new T.CylinderGeometry(.245,.235,.23,14),jeans,0,.92,0);
- const body=add(model,new T.CylinderGeometry(.295,.235,.68,16),tshirt,0,1.40,0);
- body.scale.z=.76;
+ const torso=add(model,new T.CylinderGeometry(.295,.235,.68,16),tshirt,0,1.40,0);
+ torso.scale.z=.76;
  block(model,0,1.09,-.022,.44,.10,.25,trim);
  add(model,new T.CylinderGeometry(.092,.11,.18,12),skin,0,1.82,0);
- const head=add(model,new T.SphereGeometry(.17,16,12),skin,0,2.0,-.028);
- head.scale.set(.86,1.06,.86);
- const cap=add(model,new T.SphereGeometry(.174,16,10,0,Math.PI*2,0,Math.PI*.54),hair,0,2.077,0);
- cap.scale.set(1,1,.98);
- add(model,new T.SphereGeometry(.047,9,8),skin,0,1.95,-.17).scale.set(.63,.75,1);
- for(const sign of [-1,1]){
-  add(model,new T.SphereGeometry(.043,10,8),skin,sign*.15,1.98,.006);
- }
- const legs=[],arms=[];
+ const head=ball(model,0,2.0,-.028,.17,skin);head.scale.set(.86,1.06,.86);
+ const haircap=add(model,new T.SphereGeometry(.174,16,10,0,Math.PI*2,0,Math.PI*.54),hair,0,2.077,0);
+ haircap.scale.set(1,1,.98);
+ ball(model,0,1.95,-.17,.047,skin).scale.set(.63,.75,1);
+ for(const side of [-1,1])ball(model,side*.15,1.98,.006,.043,skin);
+ const legs=[];
  for(const side of [-1,1]){
   const leg=new T.Group();leg.position.set(side*.128,.95,0);model.add(leg);
   add(leg,new T.CylinderGeometry(.112,.098,.50,12),jeans,0,-.28,0);
-  add(leg,new T.SphereGeometry(.104,10,8),jeans,0,-.53,0);
+  ball(leg,0,-.53,0,.104,jeans);
   add(leg,new T.CylinderGeometry(.097,.084,.43,12),jeans,0,-.70,-.018);
   block(leg,0,-.92,-.1,.23,.15,.38,shoes);
-  block(leg,0,-1.005,-.11,.24,.04,.38,sole);legs.push(leg);
-  const arm=new T.Group();arm.position.set(side*.32,1.66,0);model.add(arm);
-  add(arm,new T.CylinderGeometry(.125,.117,.235,12),tshirt,side*.03,-.1,0);
-  const forearm=add(arm,new T.CylinderGeometry(.084,.072,.46,12),skin,side*.06,-.41,-.07);
-  forearm.rotation.x=side===1?-.26:-.12;
-  add(arm,new T.SphereGeometry(.08,10,9),skin,side*.09,-.65,-.135);
-  arms.push(arm);
+  block(leg,0,-1.005,-.11,.24,.04,.38,sole);
+  legs.push(leg);
  }
- arms[1].rotation.x=-.37;
- const pistol=new T.Group();pistol.position.set(.41,1.025,-.39);root.add(pistol);
- block(pistol,0,.07,-.18,.175,.14,.39,gun);
- block(pistol,0,.157,-.16,.185,.085,.39,trim);
- block(pistol,0,-.10,-.06,.14,.26,.15,gun);
- block(pistol,0,.14,-.345,.085,.055,.11,gun);
- add(pistol,new T.SphereGeometry(.09,10,9),skin,.015,-.035,-.045);
+ // Cylindres orientés exactement entre leurs articulations.
+ function limb(group,start,end,radius,material,edgeRadius=radius){
+  const from=new T.Vector3(...start),to=new T.Vector3(...end);
+  const direction=to.clone().sub(from),height=direction.length();
+  const piece=add(group,new T.CylinderGeometry(edgeRadius,radius,height,12),material,
+   (from.x+to.x)/2,(from.y+to.y)/2,(from.z+to.z)/2);
+  piece.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),direction.normalize());
+  return piece;
+ }
+ // Bras gauche relâché : manches courtes, avant-bras et main.
+ const leftArm=new T.Group();leftArm.position.set(-.315,1.65,0);model.add(leftArm);
+ ball(leftArm,0,-.04,0,.13,tshirt);
+ limb(leftArm,[0,-.04,0],[-.08,-.25,-.025],.119,tshirt,.105);
+ limb(leftArm,[-.08,-.25,-.025],[-.10,-.62,-.04],.083,skin,.073);
+ ball(leftArm,-.10,-.66,-.04,.084,skin);
+ // Bras droit : épaule -> coude plié -> poignet tendu vers l'avant.
+ const rightArm=new T.Group();rightArm.position.set(.305,1.65,-.025);model.add(rightArm);
+ ball(rightArm,0,-.04,0,.129,tshirt);
+ const elbow=new T.Vector3(.065,-.34,-.245),wrist=new T.Vector3(-.025,-.405,-.64);
+ limb(rightArm,[0,-.04,0],[.046,-.21,-.13],.122,tshirt,.109);
+ limb(rightArm,[.046,-.21,-.13],[elbow.x,elbow.y,elbow.z],.092,skin,.086);
+ ball(rightArm,elbow.x,elbow.y,elbow.z,.084,skin);
+ limb(rightArm,[elbow.x,elbow.y,elbow.z],[wrist.x,wrist.y,wrist.z],.084,skin,.073);
+ // Le pivot de poignet est parent de la paume, des doigts ET du pistolet.
+ // Ainsi la main ne se détache plus de l'arme quand le bras bouge.
+ const handRig=new T.Group();handRig.position.copy(wrist);rightArm.add(handRig);
+ // Paume dirigée vers la poignée.
+ const palm=ball(handRig,0,-.005,-.118,.088,skin);palm.scale.set(.94,.9,1.3);
+ const thumb=ball(handRig,-.105,.024,-.16,.046,skin);thumb.scale.set(.75,.9,1.25);
+ const pistol=new T.Group();pistol.position.set(.004,.058,-.125);handRig.add(pistol);
+ // Culasse parallèle au regard du personnage (-Z), canon et hausse.
+ block(pistol,0,.075,-.168,.17,.14,.37,gun);
+ block(pistol,0,.166,-.167,.18,.085,.39,slide);
+ block(pistol,0,.21,-.312,.055,.045,.07,gun);
+ block(pistol,0,.194,-.015,.065,.043,.048,gun);
+ // La poignée rentre au creux de la paume ; légèrement inclinée vers l'arrière.
+ const grip=block(pistol,0,-.106,-.053,.137,.27,.144,gun);
+ grip.rotation.x=-.18;
+ block(pistol,0,-.246,-.023,.154,.038,.154,slide);
+ // Pontet, détente et quatre doigts autour de la poignée (aucune main flottante).
+ const guard=add(pistol,new T.TorusGeometry(.083,.014,6,16,Math.PI*1.44),gun,0,-.083,-.182);
+ guard.rotation.y=Math.PI/2;guard.rotation.x=-.09;
+ for(let finger=0;finger<4;finger++){
+  const y=-.035-finger*.051;
+  const curl=ball(pistol,.092,y,-.065,.037,skin);
+  curl.scale.set(.72,.66,1.18);
+  block(pistol,.075,y,-.105,.042,.025,.082,skin);
+ }
+ // Index près de la détente, sans traverser la glissière.
+ const indexFinger=ball(pistol,.076,-.025,-.172,.027,skin);
+ indexFinger.scale.set(.64,.8,1.1);
+ let recoilAngle=0;
  function animate(dt,time,moving,running){
   const phase=time*(running?12.2:8.4);
   const stride=moving?Math.sin(phase)*(running?.43:.28):0;
   const ease=Math.min(1,dt*12);
   legs[0].rotation.x+=(stride-legs[0].rotation.x)*ease;
   legs[1].rotation.x+=(-stride-legs[1].rotation.x)*ease;
-  arms[0].rotation.x+=(-stride*.5-arms[0].rotation.x)*ease;
-  arms[1].rotation.x+=(-.37-arms[1].rotation.x)*ease;
+  leftArm.rotation.x+=(-stride*.5-leftArm.rotation.x)*ease;
+  // En course, léger balancement de l'ensemble bras + main + pistolet,
+  // pas de déplacement séparé de la culasse par rapport aux doigts.
+  rightArm.rotation.x+=((moving?Math.sin(phase)*.035:0)-rightArm.rotation.x)*Math.min(1,dt*8);
+  recoilAngle*=Math.exp(-dt*16);
+  handRig.rotation.x=recoilAngle;
   model.position.y+=((moving?.015*Math.sin(phase*2):0)-model.position.y)*ease;
-  pistol.position.z+=(-.39-pistol.position.z)*Math.min(1,dt*21);
  }
- function muzzle(){return pistol.localToWorld(new T.Vector3(0,.15,-.42))}
- function recoil(){pistol.position.z-=.045}
- return{model,legs,arms,pistol,animate,muzzle,recoil};
+ // Calcul du bout du canon en coordonnées MONDE, quel que soit l'angle du bras.
+ function muzzle(){return pistol.localToWorld(new T.Vector3(0,.132,-.385))}
+ function recoil(){recoilAngle=Math.min(.18,recoilAngle+.12)}
+ return{model,legs,arms:[leftArm,rightArm],pistol,handRig,animate,muzzle,recoil};
 }
