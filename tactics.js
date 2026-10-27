@@ -169,7 +169,7 @@ function render(){
  $('buttonReload').disabled=state.player.reserve===0||state.player.mag>=6||busy;
  $('buttonHeal').disabled=state.player.medkits===0||state.player.hp===state.player.maxHp||busy;
  $('buttonWait').disabled=busy;
- $('buttonBottle').disabled=state.player.bottles===0||busy;
+ $('tool-bottle').disabled=state.player.bottles===0||busy;
  $('buttonShotgun').disabled=!state.player.shotgun||busy;
  $('buttonPistol').classList.toggle('active',state.weapon==='pistol');
  $('buttonShotgun').classList.toggle('active',state.weapon==='shotgun');
