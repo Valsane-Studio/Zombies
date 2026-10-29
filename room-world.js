@@ -88,9 +88,9 @@ export function buildAbandonedRoom(T,scene){
   for(let i=0;i<12;i++)rounded(root,wx-.68+i*.122,.57,-4.36,.085,.46,.12,m.metal,.022);
  }
  // Mur de l'entrée avec porte entrouverte et peinture écaillée.
- box(root,-4.87,2.04,5,2.24,4.08,.28,m.plaster);
- box(root,1.10,2.04,5,9.75,4.08,.28,m.plaster);
- box(root,-3.38,3.52,5,1.26,1.07,.28,m.plaster);
+ box(root,-5.0,2.04,5,2.0,4.08,.28,m.plaster);
+ box(root,1.7,2.04,5,8.6,4.08,.28,m.plaster);
+ box(root,-3.3,3.56,5,1.4,1.0,.28,m.plaster);
  box(root,-3.38,2.05,5.09,.11,2.95,.20,m.darkWood);
  const entrance=group();entrance.position.set(-3.98,0,5);entrance.rotation.y=.18;
  rounded(entrance,.60,1.45,0,1.19,2.84,.11,m.darkWood,.045);
