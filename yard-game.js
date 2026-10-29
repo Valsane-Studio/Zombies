@@ -264,7 +264,7 @@ function move(dt){
  else $('status').textContent='COUR INDUSTRIELLE';
 }
 function updateCamera(dt,force=false){
- const offset=new T.Vector3(Math.sin(cameraAngle)*-21*cameraZoom,17.3*cameraZoom*cameraTilt,Math.cos(cameraAngle)*21*cameraZoom);
+ const offset=new T.Vector3(Math.sin(cameraAngle)*21*cameraZoom,17.3*cameraZoom*cameraTilt,Math.cos(cameraAngle)*21*cameraZoom);
  // Approche fixe à 3/4, légère avance dans la direction du mouvement.
  const lookAhead=new T.Vector3(player.velocity.x,0,player.velocity.z).multiplyScalar(.52);
  const target=player.position.clone().add(new T.Vector3(0,1.12,0)).add(lookAhead);
