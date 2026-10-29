@@ -20,7 +20,7 @@ renderer.shadowMap.type=T.PCFSoftShadowMap;
 renderer.setClearColor('#62756a');
 $('scene').appendChild(renderer.domElement);
 const camera=new T.PerspectiveCamera(72,innerWidth/innerHeight,.07,100);
-camera.position.set(-3.14,1.61,3.60);
+camera.position.set(-3.90,1.61,3.55);
 const hemi=new T.HemisphereLight(0xd8dfc8,0x4d463d,1.9);scene.add(hemi);
 const ambient=new T.AmbientLight('#a7a292',.27);scene.add(ambient);
 const sun=new T.DirectionalLight('#ffdbad',3.55);
@@ -38,7 +38,7 @@ fill.position.set(-5.05,2.85,2.8);scene.add(fill);
 const room=buildAbandonedRoom(T,scene);
 const nature=populateRoomNature(T,scene,room);
 const sound=createImmersiveAmbience({host:window});
-const player={pos:new T.Vector3(-3.14,0,3.6),yaw:-.14,pitch:-.075,
+const player={pos:new T.Vector3(-3.90,0,3.55),yaw:-.14,pitch:-.075,
  velocity:new T.Vector3(),running:false,moving:false};
 const keys=new Set();const pointerLocked=()=>document.pointerLockElement===renderer.domElement;
 const state={started:false,paused:false,controls:'desktop',ambient:true,inspecting:false};
@@ -59,7 +59,7 @@ function start(){
  state.paused=false;
  ui.setActive(true);
  if(matchMedia('(pointer:fine)').matches && renderer.domElement.requestPointerLock){
-  renderer.domElement.requestPointerLock().catch?.(()=>{});
+  Promise.resolve(renderer.domElement.requestPointerLock()).catch(()=>{});
  }
 }
 $('startButton').addEventListener('click',start);
@@ -67,7 +67,7 @@ overlay.addEventListener('click',e=>{if(e.target===overlay)start()});
 renderer.domElement.addEventListener('click',()=>{
  if(!state.started){start();return}
  if(!pointerLocked()&&matchMedia('(pointer:fine)').matches){
-  renderer.domElement.requestPointerLock?.().catch?.(()=>{});
+  Promise.resolve(renderer.domElement.requestPointerLock?.()).catch(()=>{});
   return;
  }
  if(hovered)interact();
@@ -140,7 +140,6 @@ $('audioButton').addEventListener('click',()=>{
  state.ambient=sound.setEnabled(!state.ambient);
  $('audioButton').textContent=state.ambient?'SON : ON':'SON : OFF';
 });
-$('closeNotice').addEventListener('click',()=>{notice.hidden=true;noticeExpires=0});
 function interact(){
  if(!hovered||!state.started)return;
  const response=hovered.onUse();
