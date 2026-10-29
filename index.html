@@ -1,38 +1,69 @@
 <!doctype html>
 <html lang="fr">
 <head>
- <meta charset="utf-8">
- <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
- <meta name="theme-color" content="#1a2726">
- <meta name="description" content="ZONE ZÉRO — Étude visuelle : une rue post-apocalyptique en 3D avec exploration en temps réel, sans zombies.">
- <title>ZONE ZÉRO — Rue abandonnée · Valsane Studio</title>
- <link rel="stylesheet" href="./street.css">
- <script type="importmap">
- {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
- </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111916">
+<meta name="description" content="ZONE ZÉRO, Valsane Studio : découvrez un véritable salon post-apocalyptique en 3D, abandonné et envahi par la nature. Expérience de rendu et d'exploration interactive.">
+<title>ZONE ZÉRO — Salon abandonné, étude 3D · Valsane Studio</title>
+<link rel="stylesheet" href="./room.css">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
+</script>
 </head>
 <body>
- <div id="scene" aria-label="Rue post-apocalyptique en 3D"></div>
- <div class="vignette" aria-hidden="true"></div>
- <div id="crosshair" aria-hidden="true"><i></i></div>
- <div class="topline">
-  <section class="brand"><span class="micro"><span class="led"></span> VALSANE STUDIO <span class="slash">/</span> EXPÉRIENCE 04</span><h1>ZONE <span>ZÉRO</span></h1><p>LA RUE ABANDONNÉE · LUMIÈRE AU CAFÉ NORD</p></section>
-  <section class="mode-label"><span class="mode-led"></span><strong id="zoneStatus">EXPLORATION LIBRE</strong><span id="zoneHint">REPÉREZ L’IMMEUBLE ACCESSIBLE</span></section>
+<main id="scene" aria-label="Salon post-apocalyptique explorable en véritable 3D"></main>
+<div class="film-grain" aria-hidden="true"></div>
+<div class="cinematic-vignette" aria-hidden="true"></div>
+<div id="reticle" aria-hidden="true"><span></span></div>
+<header id="chrome" class="chrome">
+ <a class="identity" href="./" aria-label="ZONE ZÉRO : accueil">
+   <span class="micro">VALSANE STUDIO <span class="sep">/</span> RECHERCHE VISUELLE 05</span>
+   <strong>ZONE <em>ZÉRO</em></strong>
+   <span class="subtitle">LE SALON ABANDONNÉ</span>
+ </a>
+ <div class="status">
+   <span class="status-dot"></span>
+   <span>UNE PIÈCE <b>·</b> EXPLORATION 3D</span>
  </div>
- <div id="loading" class="loading" role="status"><span class="spinner"></span><span id="loadingText">Construction de la rue…</span></div>
- <div class="bottomline">
-  <div class="instructions"><span class="micro">EXPLORATION À LA TROISIÈME PERSONNE</span>
-<p><b>CLIC GAUCHE</b> Marcher <em>·</em> <b>DOUBLE-CLIC</b> Courir <em>·</em> <b>CLIC DROIT</b> Tirer</p>
-<p><b>ALT + GLISSER</b> Tourner la caméra <em>·</em> <b>MOLETTE</b> Zoom</p>
-<p><b>FLÈCHES</b> Orienter la vue <em>·</em> <b>C</b> Recentrer <em>·</em> <b>H</b> Masquer</p>
-<div class="audio-row"><button id="audioToggle" aria-pressed="true" type="button">♫ SON : ON</button><span>Cliquer dans le jeu pour activer l’ambiance</span></div></div>
-  <div class="weapon-box"><span class="micro">ÉQUIPEMENT <span class="slash">/</span> ÉTUDE VISUELLE</span><div class="gunrow"><svg viewBox="0 0 82 38" aria-hidden="true"><path d="M8 15h52l8 4h9v5H54l-5 4-4 8H30l7-13H8z" fill="currentColor"/><path d="M25 12h27v5H25z" fill="currentColor"/><path d="M15 23h20" stroke="#263735" stroke-width="2"/></svg><div><strong>PISTOLET 9 MM</strong><div class="bullets" id="bullets">● ● ● ● ● ● ● ● ● ● ● ●</div></div></div><div class="gunfoot"><span id="ammo">12 <small>/ 12</small></span><span id="state">PRÊT</span></div></div>
+</header>
+<div class="aim" id="contextPrompt" hidden>E · Examiner</div>
+<div class="story-notice" id="storyNotice" hidden role="status">
+ Un lieu oublié.
+</div>
+<div class="lower-ui">
+ <div class="control-panel">
+   <span class="micro">SE DÉPLACER LIBREMENT</span>
+   <p><b>ZQSD / WASD</b> Marcher <span>·</span> <b>SOURIS</b> Regarder</p>
+   <p><b>MAJ</b> Courir <span>·</span> <b>E</b> Examiner / ouvrir <span>·</span> <b>ÉCHAP</b> Libérer la souris</p>
+   <p><b>MOLETTE</b> Ajuster la focale <span>·</span> <b>H</b> Interface</p>
+   <div class="small-row">
+     <button id="audioButton" type="button">SON : ON</button>
+     <a href="./rue.html" title="Revoir l'ancien prototype de rue">Ancienne rue 3D</a>
+     <span id="lockHint" class="lock-hint">CLIQUEZ DANS LA PIÈCE POUR REPRENDRE LE REGARD</span>
+   </div>
  </div>
- <div id="notice" class="notice" hidden>CHARGEUR RECHARGÉ</div>
- <div class="mobileControls" id="mobileControls">
-   <span class="mobile-hint">TOUCHER LE SOL POUR MARCHER</span>
-   <button id="mobileFire" aria-label="Tirer">TIRER</button>
+ <span class="study-note">ÉTUDE TECHNIQUE · SCÈNE 3D TEMPS RÉEL</span>
+</div>
+<div id="touchUi" class="touch-ui">
+ <div id="touchPad" class="touch-pad" aria-label="Déplacement tactile"><div id="touchStick"></div></div>
+ <button id="interact" type="button" hidden>EXAMINER</button>
+</div>
+<div id="loading" class="loading">
+ <div class="loading-line"></div>
+ <span>CONSTRUCTION DE LA PIÈCE EN 3D…</span>
+</div>
+<div id="startOverlay" class="start-overlay">
+ <div class="start-panel">
+   <span class="micro">VALSANE STUDIO · EXPÉRIENCE INTERACTIVE</span>
+   <div class="panel-line"></div>
+   <h1>UNE PIÈCE.<br><i>UN MONDE ABANDONNÉ.</i></h1>
+   <p>Un salon, des années après le départ de ses occupants. Le temps a passé, les murs se sont fissurés et la végétation a gagné l'intérieur. Explorez chaque recoin à votre rythme.</p>
+   <div class="start-metadata"><span>100 % 3D TEMPS RÉEL</span><span>VUE À LA PREMIÈRE PERSONNE</span><span>AUCUN ENNEMI</span></div>
+   <button id="startButton" type="button">ENTRER DANS LE SALON <span aria-hidden="true">↗</span></button>
+   <small id="cursorHint">CLIQUEZ POUR ENTRER</small>
  </div>
- <script type="module" src="./street-demo.js"></script>
+</div>
+<script type="module" src="./room-play.js"></script>
 </body>
 </html>
