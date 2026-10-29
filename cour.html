@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#34464d">
+<meta name="description" content="ZONE ZÉRO — exploration cinématographique 3D d'une cour industrielle abandonnée. Marcher, courir, sauter et grimper dans une ville silencieuse.">
+<title>ZONE ZÉRO — Archive : cour 3D</title>
+<link rel="stylesheet" href="./yard.css">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<div id="stage" aria-label="Cour industrielle abandonnée explorable en 3D"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<header class="hud-header">
+  <div class="identity">
+    <small><span class="online"></span> VALSANE STUDIO <i>/</i> ÉTUDE 06</small>
+    <h1>ZONE <span>ZÉRO</span></h1>
+    <p>COUR DES OMBRES</p>
+  </div>
+  <div class="hud-right">
+    <span class="eyebrow">EXPLORATION LIBRE</span>
+    <strong id="status">COUR INDUSTRIELLE</strong>
+    <span>UNE VILLE DÉSERTE. UN CHEMIN À TROUVER.</span>
+  </div>
+</header>
+<div id="message" class="message" hidden></div>
+<div class="hud-bottom">
+  <div class="instructions">
+    <div class="micro">UNE PREMIÈRE ZONE · DÉPLACEMENTS EN 3D</div>
+    <div class="line"><b>ZQSD / WASD</b> Marcher <span>·</span> <b>MAJ</b> Courir <span>·</span> <b>ESPACE</b> Sauter</div>
+    <div class="line"><b>CLIC</b> Se déplacer <span>·</span> <b>CLIC DROIT + GLISSER</b> Tourner la caméra</div>
+    <div class="line"><b>FLÈCHES</b> Orienter la caméra <span>·</span> <b>MOLETTE</b> Zoomer <span>·</span> <b>C</b> Recentrer</div>
+    <div class="utility">
+      <button id="mute" type="button">SON : ON</button>
+      <button id="reset" type="button">REVENIR AU DÉPART</button>
+      <a href="./salon.html">Ancien salon</a>
+      <a href="./rue.html">Ancienne rue</a>
+    </div>
+  </div>
+  <div class="concept">LE MONDE EST EN TROIS DIMENSIONS.<br>LA CAMÉRA RESTE CINÉMATOGRAPHIQUE.</div>
+</div>
+<div class="mobile-ui">
+  <div id="pad" class="pad" role="group" aria-label="Déplacement tactile">
+    <div class="pad-cross"></div>
+    <div id="knob" class="knob"></div>
+  </div>
+  <button id="jump" type="button">SAUTER</button>
+</div>
+<div id="loading" class="loading" role="status">CONSTRUCTION DU DÉCOR 3D…</div>
+<script type="module" src="./yard-game.js"></script>
+</body>
+</html>
