@@ -1,54 +1,55 @@
-# ZONE ZÉRO — Exploration immersive 04
+# ZONE ZÉRO — Étude 05 : un salon post-apocalyptique explorable en 3D
 
-**Démo jouable :** https://valsane-studio.github.io/Zombies/
+**Démo : https://valsane-studio.github.io/Zombies/**
 
-Cette version du projet Valsane Studio explore une **caméra derrière le personnage, légèrement surélevée**, dans une rue post-apocalyptique. Le personnage est seul, en tee-shirt et pantalon, avec son pistolet. Le jeu reste un prototype d'exploration en temps réel : pas de zombies, pas de farming, pas d'inventaire ni de missions obligatoires.
+**Ancienne rue 3D, conservée : https://valsane-studio.github.io/Zombies/rue.html**
 
-## Ce qui change
+## Objectif
 
-- **Caméra de troisième personne :** à environ six mètres derrière le personnage à l'extérieur, plus proche à l'intérieur. Les pivots, les changements de hauteur et le suivi sont amortis pour accompagner le survivant plutôt que surveiller un plateau.
-- **Rotation libre et recentrage :** la caméra suit l'orientation du personnage en déplacement, mais peut être orientée indépendamment avec Alt + glisser ou le bouton central ; la molette permet le zoom. Une gestion simple des obstacles évite qu'une façade passe systématiquement devant le regard.
-- **Café Nord :** l'unique immeuble visitable est conservé (hall, porte condamnée, escalier, appartement et toit), avec adaptation automatique de la caméra aux étages.
-- **La fenêtre éclairée :** une lumière vacille à l'étage, visible depuis la rue. Le joueur peut décider librement de s'approcher. Des indices sonores et un carnet permettent de découvrir une petite trace de vie. Ce n'est pas une quête ni une séquence dirigée.
-- **Ambiance sonore :** vent discret, pas, portes et grincements synthétisés localement avec Web Audio. Le son ne se lance qu'après interaction, et peut être coupé avec le bouton « SON ».
-- **Immersion visuelle :** une interface allégée qui laisse davantage de place au décor, arbres, herbes, mousse et immeubles délabrés.
+Une seule pièce très travaillée plutôt qu'un quartier entier : tester les limites techniques du rendu **3D en temps réel** dans un navigateur, avec une exploration libre et moderne. **Ce n'est pas une image ni un panorama** : l'utilisateur se déplace vraiment dans un salon modélisé en 3D et peut observer ses objets sous plusieurs angles.
+
+## Le salon
+
+- Environ **12 × 10 mètres**, vue subjective avec éclairage cinématographique.
+- Parquet en centaines de lames distinctes, craquelures, murs altérés, peintures et plâtre abîmé, boiseries, corniches.
+- Trois fenêtres sur un jardin envahi par les arbres et buissons, rideaux déchirés, vitres endommagées, radiateurs.
+- Canapé ancien aux coussins distincts, fauteuil, table basse, livres, vaisselle, lampe, buffet, bibliothèque, cheminée, cadres, chaise renversée.
+- Débris, morceaux de verre, livres et feuilles au sol.
+- Plantes qui entrent par les fenêtres, **2 500 feuilles instanciées**, **1 850 plans d'herbe**, **225 taches de mousse**, poussière flottante, lianes, arbres dans la cour extérieure.
+- Lumière directe et ombres douces, brouillard très discret, légères traînées de lumière, rendu ACES.
+- Textures créées procéduralement sur Canvas. Quand la connexion le permet, remplacement progressif de certains matériaux par des cartes PBR photographiques **Poly Haven CC0** (diffuse, normale et rugosité). Si elles ne chargent pas, la scène reste jouable.
 
 ## Commandes
 
 | Action | Commande |
 |---|---|
-| Marcher | Clic gauche sur le sol |
-| Courir | Double-clic ou Maj + clic gauche |
-| Interagir avec porte, escalier ou indice | Clic gauche sur son étiquette |
-| Viser et tirer | Maintenir le clic droit |
-| Recharger | R |
-| Faire pivoter la caméra | Alt + glisser / bouton central + glisser / flèches gauche-droite |
-| Ajuster la hauteur de vue | Flèches haut-bas |
-| Zoom | Molette |
-| Recentrer | C |
-| Annuler un déplacement | Échap |
+| Entrer dans la pièce | Bouton **Entrer dans le salon** |
+| Regarder autour de soi | Bouger la souris, après un clic dans la scène |
+| Marcher | ZQSD / WASD |
+| Courir | Maj |
+| Interagir avec un objet proche | E / F, ou clic gauche quand la souris est capturée |
+| Libérer la souris | Échap |
+| Adapter la focale | Molette |
+| Activer / désactiver l'ambiance sonore | M ou bouton SON |
 | Masquer l'interface | H |
-| Couper / activer les sons | Bouton SON |
+| Tactile | Joystick à gauche, glisser le doigt dans le décor pour regarder ; **Examiner** si un objet est à portée |
 
-Le déplacement au clic est volontairement conservé pour respecter les préférences établies. La caméra est maintenant derrière le survivant, et non en plongée isométrique.
+Des objets peuvent être examinés, et **un tiroir peut être ouvert et refermé**. Quelques interactions déclenchent de courtes descriptions, sans inventaire ou quête.
 
-## Fichiers principaux
+## Architecture des fichiers
 
-- \`street-demo.js\` : jeu, caméra, événements d'exploration, sons, personnage.
-- \`immersive-camera.js\` : caméra 3e personne, suivi, rotation manuelle, rapprochement intérieur et obstacles.
-- \`immersive-ambience.js\` : vent, pas, métal, portes en synthèse Web Audio.
-- \`visit-building.js\` : Café Nord, fenêtre éclairée, intérieur, escaliers, carnet, toit.
-- \`click-navigation.js\` : navigation A*, interactions et visée.
-- \`civilian.js\` : petit personnage civil, marche et pistolet dans la main.
-- \`street-world.js\`, \`overgrowth.js\` : rue et végétation.
-- \`index.html\`, \`street.css\` : interface.
+- \`index.html\`, \`room.css\` : nouvelle expérience.
+- \`room-play.js\` : moteur de vue subjective, commandes souris et tactile, déplacements fluides, collisions, interactions.
+- \`room-world.js\` : architecture physique de la pièce, mobilier, détails et points d'interaction.
+- \`room-nature.js\` : végétation instanciée, jardin 3D extérieur et poussière.
+- \`room-materials.js\` : textures procédurales et couches PBR photographiques facultatives.
+- \`immersive-ambience.js\` : sons Web Audio synthétiques, sans musique.
+- \`rue.html\`, \`street-demo.js\`, \`visit-building.js\`, \`street-world.js\`, etc. : ancien prototype de rue, sauvegardé.
 
-Les anciens prototypes (jeu de plateau et vue du dessus) demeurent dans le dépôt, mais ne sont plus actifs sur la page d'accueil.
+## Limites honnêtes
 
-## Limites actuelles
+Les modèles sont actuellement construits à la main en géométries procédurales, sans photogrammétrie, sans véritables modèles scannés d'objets ni post-production SSAO avancée. Les tissus, objets et végétaux sont améliorés par des matériaux et des surfaces géométriques, mais **le résultat ne doit pas être confondu avec une image photoréaliste générée ou une scène AAA Unreal Engine**.
 
-Le jeu n'est **pas encore photoréaliste**. Les décors, les déplacements et les animations sont largement procéduraux ; une expérience vraiment convaincante exigera des modèles et animations plus aboutis, des matériaux de qualité et une amélioration de l'architecture des intérieurs. La montée d'escalier et le franchissement de fenêtre restent des transitions simplifiées.
+La construction 3D et la boucle principale ont été contrôlées avec des tests simulés, et les imports ont été vérifiés. **Le rendu final sur un navigateur réel n'a pas encore été contrôlé visuellement.** Cette étude sert précisément à évaluer ce qu'il faut améliorer : géométrie, textures, éclairage et fluidité.
 
-Le code est vérifié en syntaxe, les modules principaux en tests simulés et la gestion de la caméra est testée en dehors du navigateur. La démo **n'a pas été validée dans un navigateur WebGL réel**, ni sa dernière mise en ligne GitHub Pages.
-
-© Valsane Studio. Ressources externes : [Three.js](https://threejs.org/) et textures [Poly Haven](https://polyhaven.com/) (CC0).
+© Valsane Studio. Textures photographiques facultatives : [Poly Haven](https://polyhaven.com/) (CC0).
