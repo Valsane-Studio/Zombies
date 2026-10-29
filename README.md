@@ -1,55 +1,56 @@
-# ZONE ZÉRO — Étude 05 : un salon post-apocalyptique explorable en 3D
+# ZONE ZÉRO — Étude 06 · Cour des ombres
 
-**Démo : https://valsane-studio.github.io/Zombies/**
+**Jouer : https://valsane-studio.github.io/Zombies/**
 
-**Ancienne rue 3D, conservée : https://valsane-studio.github.io/Zombies/rue.html**
+Cette nouvelle page d'accueil est un **prototype de monde 3D en perspective cinématographique** inspiré par une esthétique industrielle sombre, brumeuse et épurée. Ce n'est pas un jeu à choix ni un panorama : on dirige un personnage directement à travers la profondeur réelle de la scène.
 
-## Objectif
+## Prototype actuel
 
-Une seule pièce très travaillée plutôt qu'un quartier entier : tester les limites techniques du rendu **3D en temps réel** dans un navigateur, avec une exploration libre et moderne. **Ce n'est pas une image ni un panorama** : l'utilisateur se déplace vraiment dans un salon modélisé en 3D et peut observer ses objets sous plusieurs angles.
-
-## Le salon
-
-- Environ **12 × 10 mètres**, vue subjective avec éclairage cinématographique.
-- Parquet en centaines de lames distinctes, craquelures, murs altérés, peintures et plâtre abîmé, boiseries, corniches.
-- Trois fenêtres sur un jardin envahi par les arbres et buissons, rideaux déchirés, vitres endommagées, radiateurs.
-- Canapé ancien aux coussins distincts, fauteuil, table basse, livres, vaisselle, lampe, buffet, bibliothèque, cheminée, cadres, chaise renversée.
-- Débris, morceaux de verre, livres et feuilles au sol.
-- Plantes qui entrent par les fenêtres, **2 500 feuilles instanciées**, **1 850 plans d'herbe**, **225 taches de mousse**, poussière flottante, lianes, arbres dans la cour extérieure.
-- Lumière directe et ombres douces, brouillard très discret, légères traînées de lumière, rendu ACES.
-- Textures créées procéduralement sur Canvas. Quand la connexion le permet, remplacement progressif de certains matériaux par des cartes PBR photographiques **Poly Haven CC0** (diffuse, normale et rugosité). Si elles ne chargent pas, la scène reste jouable.
+- Grand espace 3D avec entrepôts monumentaux, murs de béton, carcasse automobile, rails métalliques, ferrailles, structure triangulaire et végétation discrète.
+- Petite silhouette humaine en veste rouge sombre et pantalon anthracite, bras/jambes animés.
+- Lumière directionnelle et ombres portées, brume bleutée, teintes désaturées et volumétrie industrielle.
+- **Rampe praticable** sur ~16 mètres, qui monte de 0 à 3,24 mètres, puis vraie **passerelle surélevée** avec garde-corps et supports.
+- Marcher, courir, sauter, avancer/reculer et tourner librement dans la profondeur.
+- Déplacement au clic avec recherche de chemin **A\*** et prise en compte des obstacles / dénivelés.
+- Collisions indépendantes de la géométrie décorative : pas de collision contre les herbes, câbles ou petits gravats.
+- Petite radio lumineuse en hauteur, à examiner en appuyant sur E quand on s'approche.
+- Interface épurée, contrôles tactiles simplifiés.
 
 ## Commandes
 
 | Action | Commande |
-|---|---|
-| Entrer dans la pièce | Bouton **Entrer dans le salon** |
-| Regarder autour de soi | Bouger la souris, après un clic dans la scène |
+| --- | --- |
 | Marcher | ZQSD / WASD |
 | Courir | Maj |
-| Interagir avec un objet proche | E / F, ou clic gauche quand la souris est capturée |
-| Libérer la souris | Échap |
-| Adapter la focale | Molette |
-| Activer / désactiver l'ambiance sonore | M ou bouton SON |
+| Sauter | Espace |
+| Cliquer pour se déplacer | Clic gauche sur le sol, la rampe ou la passerelle |
+| Orienter la caméra | Maintenir clic droit (ou central) et glisser, ou flèches |
+| Zoomer | Molette |
+| Recentrer la caméra | C |
+| Retourner au point de départ | R ou bouton |
 | Masquer l'interface | H |
-| Tactile | Joystick à gauche, glisser le doigt dans le décor pour regarder ; **Examiner** si un objet est à portée |
+| Examiner la radio, une fois à proximité | E |
+| Tactile | Joystick et bouton Sauter |
 
-Des objets peuvent être examinés, et **un tiroir peut être ouvert et refermé**. Quelques interactions déclenchent de courtes descriptions, sans inventaire ou quête.
+Le déplacement au clavier est **relatif à la caméra** pour rester confortable. La souris permet un trajet automatisé en terrain praticable, sans téléportation.
 
-## Architecture des fichiers
+## Architecture
 
-- \`index.html\`, \`room.css\` : nouvelle expérience.
-- \`room-play.js\` : moteur de vue subjective, commandes souris et tactile, déplacements fluides, collisions, interactions.
-- \`room-world.js\` : architecture physique de la pièce, mobilier, détails et points d'interaction.
-- \`room-nature.js\` : végétation instanciée, jardin 3D extérieur et poussière.
-- \`room-materials.js\` : textures procédurales et couches PBR photographiques facultatives.
-- \`immersive-ambience.js\` : sons Web Audio synthétiques, sans musique.
-- \`rue.html\`, \`street-demo.js\`, \`visit-building.js\`, \`street-world.js\`, etc. : ancien prototype de rue, sauvegardé.
+- \`index.html\` : nouvelle étude 06 (accueil).
+- \`yard.css\` : habillage.
+- \`yard-world.js\` : cour 3D, hauteur de la rampe/passerelle, collisions explicites, végétation et éclairage décoratif.
+- \`yard-game.js\` : personnage animé, mouvement, saut, caméra de suivi, contrôles.
+- \`yard-nav.js\` : cheminement A* avec contraintes de hauteur et collisions.
+- \`immersive-ambience.js\` : ambiance sonore générative.
 
-## Limites honnêtes
+Les études précédentes restent accessibles :
+- **Salon 3D** : https://valsane-studio.github.io/Zombies/salon.html
+- **Ancienne rue 3D** : https://valsane-studio.github.io/Zombies/rue.html
 
-Les modèles sont actuellement construits à la main en géométries procédurales, sans photogrammétrie, sans véritables modèles scannés d'objets ni post-production SSAO avancée. Les tissus, objets et végétaux sont améliorés par des matériaux et des surfaces géométriques, mais **le résultat ne doit pas être confondu avec une image photoréaliste générée ou une scène AAA Unreal Engine**.
+## Limites
 
-La construction 3D et la boucle principale ont été contrôlées avec des tests simulés, et les imports ont été vérifiés. **Le rendu final sur un navigateur réel n'a pas encore été contrôlé visuellement.** Cette étude sert précisément à évaluer ce qu'il faut améliorer : géométrie, textures, éclairage et fluidité.
+Il s'agit d'une **étude artistique et jouable**, pas encore d'un jeu fini. Le style privilégie les silhouettes, l'éclairage et l'atmosphère au photoréalisme. Les personnages et éléments industriels restent modélisés avec des volumes géométriques simples, mais cette fois c'est une direction artistique volontaire.
 
-© Valsane Studio. Textures photographiques facultatives : [Poly Haven](https://polyhaven.com/) (CC0).
+La construction des objets 3D, les hauteurs de la rampe, la montée et les routes de navigation ont été simulées, et les fichiers testés en syntaxe. Le rendu WebGL complet sur un navigateur réel n'a pas encore été inspecté visuellement. Les performances et l'aspect final peuvent dépendre du navigateur et de l'appareil.
+
+© Valsane Studio · Trois.js / Three.js.
