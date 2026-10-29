@@ -1,56 +1,35 @@
-# ZONE ZÉRO — Étude 06 · Cour des ombres
+# ZONE ZÉRO — Démo point-and-click interactive
 
-**Jouer : https://valsane-studio.github.io/Zombies/**
+**Jouer directement : https://valsane-studio.github.io/Zombies/**
 
-Cette nouvelle page d'accueil est un **prototype de monde 3D en perspective cinématographique** inspiré par une esthétique industrielle sombre, brumeuse et épurée. Ce n'est pas un jeu à choix ni un panorama : on dirige un personnage directement à travers la profondeur réelle de la scène.
+Cette version n'utilise plus la 3D procédurale. Le décor de bureau post-apocalyptique est **une image détaillée embarquée dans le HTML**, utilisée directement comme fond de jeu. C'est la méthode retenue pour maintenir à l'écran une qualité d'image proche du concept initial.
 
-## Prototype actuel
+## Une énigme complète dans une seule pièce
 
-- Grand espace 3D avec entrepôts monumentaux, murs de béton, carcasse automobile, rails métalliques, ferrailles, structure triangulaire et végétation discrète.
-- Petite silhouette humaine en veste rouge sombre et pantalon anthracite, bras/jambes animés.
-- Lumière directionnelle et ombres portées, brume bleutée, teintes désaturées et volumétrie industrielle.
-- **Rampe praticable** sur ~16 mètres, qui monte de 0 à 3,24 mètres, puis vraie **passerelle surélevée** avec garde-corps et supports.
-- Marcher, courir, sauter, avancer/reculer et tourner librement dans la profondeur.
-- Déplacement au clic avec recherche de chemin **A\*** et prise en compte des obstacles / dénivelés.
-- Collisions indépendantes de la géométrie décorative : pas de collision contre les herbes, câbles ou petits gravats.
-- Petite radio lumineuse en hauteur, à examiner en appuyant sur E quand on s'approche.
-- Interface épurée, contrôles tactiles simplifiés.
+1. Examiner les papiers au sol et trouver une consigne de maintenance.
+2. Manipuler réellement les quatre disjoncteurs du tableau électrique, dans l'ordre indiqué.
+3. Rétablir le courant : l'état du panneau et de la pièce change.
+4. Ouvrir le tiroir de l'armoire, désormais déverrouillé, pour récupérer une clé.
+5. Utiliser la clé sur la porte de sortie.
 
-## Commandes
+Le joueur peut également examiner le bureau et la fenêtre, activer la lampe, consulter les objets récupérés, obtenir une piste, couper le son ou recommencer. Les interactions sont persistantes pendant la partie et la manipulation des disjoncteurs propose une vraie combinaison avec remise à zéro en cas d'erreur.
 
-| Action | Commande |
-| --- | --- |
-| Marcher | ZQSD / WASD |
-| Courir | Maj |
-| Sauter | Espace |
-| Cliquer pour se déplacer | Clic gauche sur le sol, la rampe ou la passerelle |
-| Orienter la caméra | Maintenir clic droit (ou central) et glisser, ou flèches |
-| Zoomer | Molette |
-| Recentrer la caméra | C |
-| Retourner au point de départ | R ou bouton |
-| Masquer l'interface | H |
-| Examiner la radio, une fois à proximité | E |
-| Tactile | Joystick et bouton Sauter |
-
-Le déplacement au clavier est **relatif à la caméra** pour rester confortable. La souris permet un trajet automatisé en terrain praticable, sans téléportation.
+**Commandes :** souris ou toucher l'écran pour examiner, Échap pour fermer une vue rapprochée, M pour activer/désactiver le son. Aucun déplacement 3D, aucune collision de géométrie.
 
 ## Architecture
 
-- \`index.html\` : nouvelle étude 06 (accueil).
-- \`yard.css\` : habillage.
-- \`yard-world.js\` : cour 3D, hauteur de la rampe/passerelle, collisions explicites, végétation et éclairage décoratif.
-- \`yard-game.js\` : personnage animé, mouvement, saut, caméra de suivi, contrôles.
-- \`yard-nav.js\` : cheminement A* avec contraintes de hauteur et collisions.
-- \`immersive-ambience.js\` : ambiance sonore générative.
+- `index.html` : démo complète et autonome avec l'image WebP intégrée, CSS, interface et logique JS (sans dépendance externe).
+- `pointclick.html` : accès direct alternatif à la même démo.
+- `cour.html` : ancienne cour industrielle 3D.
+- `salon.html` : ancien salon procédural en vue subjective.
+- `rue.html` : ancienne rue 3D.
 
-Les études précédentes restent accessibles :
-- **Salon 3D** : https://valsane-studio.github.io/Zombies/salon.html
-- **Ancienne rue 3D** : https://valsane-studio.github.io/Zombies/rue.html
+Ce prototype démontre la distinction entre **décor illustré très soigné** et **gameplay interactif**, sans essayer de transformer une image photoréaliste en modèles 3D rudimentaires.
 
-## Limites
+## Limites de cette étude
 
-Il s'agit d'une **étude artistique et jouable**, pas encore d'un jeu fini. Le style privilégie les silhouettes, l'éclairage et l'atmosphère au photoréalisme. Les personnages et éléments industriels restent modélisés avec des volumes géométriques simples, mais cette fois c'est une direction artistique volontaire.
+Les vues rapprochées des mécanismes sont ici dessinées et animées avec HTML/CSS. Un prochain niveau pourrait bénéficier d'illustrations supplémentaires pour les gros plans et de courtes transitions visuelles entre lieux. Le décor reste un point de vue fixe et non une scène entièrement traversable. L'utilisateur conserve néanmoins la possibilité de jouer réellement et de résoudre l'énigme.
 
-La construction des objets 3D, les hauteurs de la rampe, la montée et les routes de navigation ont été simulées, et les fichiers testés en syntaxe. Le rendu WebGL complet sur un navigateur réel n'a pas encore été inspecté visuellement. Les performances et l'aspect final peuvent dépendre du navigateur et de l'appareil.
+Les interactions de bout en bout ont été testées dans un navigateur Chromium local : récupération de la note, séquence des disjoncteurs, ouverture du tiroir, clé et ouverture de la porte.
 
-© Valsane Studio · Trois.js / Three.js.
+© Valsane Studio.
