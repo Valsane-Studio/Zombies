@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#1a2726">
+ <meta name="description" content="ZONE ZÉRO — Étude visuelle : une rue post-apocalyptique en 3D avec exploration en temps réel, sans zombies.">
+ <title>ZONE ZÉRO — Ancienne rue · Valsane Studio</title>
+ <link rel="stylesheet" href="./street.css">
+ <script type="importmap">
+ {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
+ </script>
+</head>
+<body>
+ <div id="scene" aria-label="Rue post-apocalyptique en 3D"></div>
+ <div class="vignette" aria-hidden="true"></div>
+ <div id="crosshair" aria-hidden="true"><i></i></div>
+ <div class="topline">
+  <section class="brand"><span class="micro"><span class="led"></span> VALSANE STUDIO <span class="slash">/</span> EXPÉRIENCE 04</span><h1>ZONE <span>ZÉRO</span></h1><p>LA RUE ABANDONNÉE · LUMIÈRE AU CAFÉ NORD</p></section>
+  <section class="mode-label"><span class="mode-led"></span><strong id="zoneStatus">EXPLORATION LIBRE</strong><span id="zoneHint">REPÉREZ L’IMMEUBLE ACCESSIBLE</span></section>
+ </div>
+ <div id="loading" class="loading" role="status"><span class="spinner"></span><span id="loadingText">Construction de la rue…</span></div>
+ <div class="bottomline">
+  <div class="instructions"><span class="micro">EXPLORATION À LA TROISIÈME PERSONNE</span>
+<p><b>CLIC GAUCHE</b> Marcher <em>·</em> <b>DOUBLE-CLIC</b> Courir <em>·</em> <b>CLIC DROIT</b> Tirer</p>
+<p><b>ALT + GLISSER</b> Tourner la caméra <em>·</em> <b>MOLETTE</b> Zoom</p>
+<p><b>FLÈCHES</b> Orienter la vue <em>·</em> <b>C</b> Recentrer <em>·</em> <b>H</b> Masquer</p>
+<div class="audio-row"><button id="audioToggle" aria-pressed="true" type="button">♫ SON : ON</button><span>Cliquer dans le jeu pour activer l’ambiance</span></div></div>
+  <div class="weapon-box"><span class="micro">ÉQUIPEMENT <span class="slash">/</span> ÉTUDE VISUELLE</span><div class="gunrow"><svg viewBox="0 0 82 38" aria-hidden="true"><path d="M8 15h52l8 4h9v5H54l-5 4-4 8H30l7-13H8z" fill="currentColor"/><path d="M25 12h27v5H25z" fill="currentColor"/><path d="M15 23h20" stroke="#263735" stroke-width="2"/></svg><div><strong>PISTOLET 9 MM</strong><div class="bullets" id="bullets">● ● ● ● ● ● ● ● ● ● ● ●</div></div></div><div class="gunfoot"><span id="ammo">12 <small>/ 12</small></span><span id="state">PRÊT</span></div></div>
+ </div>
+ <div id="notice" class="notice" hidden>CHARGEUR RECHARGÉ</div>
+ <div class="mobileControls" id="mobileControls">
+   <span class="mobile-hint">TOUCHER LE SOL POUR MARCHER</span>
+   <button id="mobileFire" aria-label="Tirer">TIRER</button>
+ </div>
+ <script type="module" src="./street-demo.js"></script>
+</body>
+</html>
