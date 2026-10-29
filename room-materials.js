@@ -142,5 +142,33 @@ export function createRoomMaterials(T){
   gold:matte('#998466',{metalness:.5,roughness:.5}),soot:matte('#201e1b'),
   stone2:matte('#6d7068',{roughness:.98})
  };
+ // Amélioration progressive : vraies textures photographiques CC0 Poly Haven,
+ // avec diffuse / normal / roughness. La scène reste 100% exploitable
+ // si le CDN ou la connexion refuse ces images (textures Canvas ci-dessus).
+ const loader=new T.TextureLoader();
+ const loadPBR=(asset,targets,repeat=[1,1])=>{
+  const base='https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/'+asset+'/'+asset+'_';
+  function pull(suffix,cb){
+   loader.load(base+suffix+'_1k.jpg',image=>{
+    image.wrapS=image.wrapT=T.RepeatWrapping;
+    image.repeat.set(repeat[0],repeat[1]);image.anisotropy=8;
+    cb(image);for(const m of targets)m.needsUpdate=true;
+   },undefined,()=>{});
+  }
+  pull('diff',image=>{
+   image.colorSpace=T.SRGBColorSpace;
+   for(const material of targets)material.map=image;
+  });
+  pull('nor_gl',image=>{
+   for(const material of targets){
+    material.normalMap=image;material.bumpMap=null;
+   }
+  });
+  pull('rough',image=>{for(const material of targets)material.roughnessMap=image});
+ };
+ loadPBR('old_wooden_floor_01',[m.plank],[1.1,1.1]);
+ loadPBR('painted_plaster_wall',[m.plaster],[3,1.2]);
+ loadPBR('plastered_wall_05',[m.ceiling],[2,2]);
+ loadPBR('wood_table_worn',[m.furniture,m.darkWood],[1.5,1.5]);
  return{m,rnd,pick,matte,tex,canvas,cloth};
 }
