@@ -301,5 +301,5 @@ export function buildAbandonedRoom(T,scene){
   return false;
  }
  // Le plafond et les éclairages ne sont pas des cibles d'interaction.
- return{root,materials:m,collides,interactions,obstacles,rnd,pick,box,mesh,cyl,group,matte,V};
+ return{root,m,materials:m,collides,interactions,obstacles,rnd,pick,box,mesh,cyl,group,matte,V};
 }
