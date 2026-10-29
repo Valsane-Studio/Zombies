@@ -130,6 +130,7 @@ export function createIndustrialYard(T,scene){
  const slope=Math.atan2(ramp.y1,ramp.x1-ramp.x0);
  const rampLen=Math.hypot(ramp.y1,ramp.x1-ramp.x0);
  const rampVisual=box(10,1.62,-9.6,rampLen,.24,5.58,materials.steelLight);
+ rampVisual.userData.walkable=true;
  rampVisual.rotation.z=slope;
  const rampPick=mesh(new T.PlaneGeometry(rampLen,5.45),materials.concreteLight,10,1.75,-9.6,scene,false);
  // surface ramp via plan: rotation X = -PI/2, puis rotation? mesh normal orientation quaternions.
@@ -138,7 +139,8 @@ export function createIndustrialYard(T,scene){
  // Platelage de la passerelle.
  const deck={x0:18,x1:38,z0:-14.3,z1:-4.9,y:3.24};
  box(28,3.11,-9.6,20,.24,9.3,materials.steelLight);
- path(28,3.246,-9.6,20,9.25,materials.concreteLight).userData.walkable=true;
+ const deckSurface=path(28,3.246,-9.6,20,9.25,materials.concreteLight);
+ deckSurface.userData.walkable=true;
  for(let i=0;i<17;i++)box(18+i*1.16,3.27,-9.6,.046,.01,9.15,materials.steel,scene,false);
  // La passerelle et sa rampe sont visiblement soutenues.
  for(const x of [18.7,26,33.5,37.4])for(const z of [-13.5,-5.5]){
@@ -290,6 +292,6 @@ export function createIndustrialYard(T,scene){
   pulse.intensity=2.45+.7*Math.sin(time*2.7)+.35*Math.sin(time*8.5);
   light.scale.setScalar(.85+.16*Math.sin(time*3));
  }
- return{heightAt,isBlocked,update,walkableMeshes:[mainGround],ramp,deck,beacon:beacon.position,
+ return{heightAt,isBlocked,update,walkableMeshes:[mainGround,deckSurface,rampVisual],ramp,deck,beacon:beacon.position,
   colliders,materials,box,scene};
 }
