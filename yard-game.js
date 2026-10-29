@@ -1,6 +1,7 @@
 /* ZONE ZÉRO — Étude 06. Exploration 3D libre, cadrage 2.5D cinématographique. */
 import * as T from 'three';
 import {createIndustrialYard} from './yard-world.js';
+import {findYardPath} from './yard-nav.js';
 import {createImmersiveAmbience} from './immersive-ambience.js';
 
 const $=id=>document.getElementById(id);
@@ -96,19 +97,15 @@ function resetPlayer(){
 }
 function setRoute(point){
  if(!point)return;
- const from=player.position, elevated=world.heightAt(point.x,point.z)>2.3;
- const onTop=player.position.y>2.1;
- let waypoints=[];
- const rampStart=new T.Vector3(2.4,0,-9.6),rampEnd=new T.Vector3(17.7,3.24,-9.6);
- if(elevated&&!onTop){
-  // L'ascension passe obligatoirement par la rampe, sans téléportation.
-  waypoints=[rampStart,rampEnd,point];
- }else if(!elevated&&onTop){
-  waypoints=[rampEnd,rampStart,point];
- }else waypoints=[point];
- targetPath=waypoints;
+ const route=findYardPath(T,world,player.position,point);
+ if(!route||!route.length){
+  message('Aucun passage praticable jusqu’à cet endroit.',2.8);
+  return;
+ }
+ targetPath=route;
  destination=point.clone();
- goalIndicator.position.set(point.x,world.heightAt(point.x,point.z)+.13,point.z);
+ const dest=route[route.length-1];
+ goalIndicator.position.set(dest.x,world.heightAt(dest.x,dest.z)+.13,dest.z);
  goalIndicator.visible=true;
 }
 function clickGround(x,y){
@@ -252,9 +249,8 @@ function move(dt){
  runner.animate(dt,performance.now()*.001,horizontal,player.grounded);
  if(horizontal>.22&&player.grounded){
   player.stepTime+=dt;
-  if(player.stepTime>(horizontal>4?.27:.42)){player.stepTime=0;sound.cue('step')}
  }else player.stepTime=0;
- sound.update(dt,{moving:false,running:horizontal>4,inside:false});
+ sound.update(dt,{moving:horizontal>.22&&player.grounded,running:horizontal>4,inside:false});
  if(!storyTriggered&&player.position.y>2.6&&player.position.x>18){
   storyTriggered=true;message('Une passerelle surplombe la cour. Le paysage s’ouvre derrière les structures.',5);
  }
